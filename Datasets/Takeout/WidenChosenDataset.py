@@ -4,6 +4,20 @@ import pandas as pd
 orders = pd.read_csv("Datasets/restaurant-2-orders-trimmed.csv")
 products = pd.read_csv("Datasets/Original/restaurant-2-products-price.csv")
 
+# === 1️⃣.1️⃣ Normalizace názvů produktů (sjednocení case-insensitive) ===
+# Vytvoření mapování lowercase -> originální název z ceníku
+product_name_map = {}
+for product_name in products['Item Name']:
+    product_name_lower = product_name.lower()
+    # Pokud existuje více variant, použijeme první (z ceníku)
+    if product_name_lower not in product_name_map:
+        product_name_map[product_name_lower] = product_name
+
+# Normalizace názvů v objednávkách podle ceníku
+orders['Item Name'] = orders['Item Name'].str.lower().map(product_name_map).fillna(orders['Item Name'])
+
+print(f"✅ Normalizováno {len(product_name_map)} unikátních produktů")
+
 # === 2️⃣ Seznam všech produktů z ceníku ===
 all_items = products['Item Name'].unique()
 
@@ -30,6 +44,14 @@ orders_meta = (
         'Total products': 'first'
     })
 )
+
+# === 5️⃣.1️⃣ Rozdělení času na hodiny, minuty, sekundy ===
+# Převod Time na pandas datetime pro extrakci komponent
+orders_meta['Time_dt'] = pd.to_datetime(orders_meta['Time'], format='%H:%M:%S', errors='coerce')
+orders_meta['Hour'] = orders_meta['Time_dt'].dt.hour
+orders_meta['Minute'] = orders_meta['Time_dt'].dt.minute
+orders_meta['Second'] = orders_meta['Time_dt'].dt.second
+orders_meta = orders_meta.drop(columns=['Time_dt'])  # Odstranit pomocný sloupec
 
 # === 6️⃣ Spojení dohromady ===
 final = orders_meta.join(pivot, on='Order ID')
@@ -76,7 +98,7 @@ final[['Average Item Quantity', 'Max Item Quantity', 'Min Item Quantity']] = piv
 
 # === 1️⃣2️⃣ Přeskládání sloupců: metriky vpředu, itemy vzadu ===
 metric_columns = [
-    'Date', 'Time', 'Total products',
+    'Date', 'Time', 'Hour', 'Minute', 'Second', 'Total products',
     'Total Price', 'Average Item Price', 'Median Item Price',
     'Cheapest Item Price', 'Most Expensive Item Price',
     'Average Item Quantity', 'Max Item Quantity', 'Min Item Quantity'

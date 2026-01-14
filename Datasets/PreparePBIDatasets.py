@@ -43,7 +43,7 @@ for output_name, input_path in datasets.items():
     # Speciální zpracování pro orders dataset - odstranit sloupce produktů
     if output_name == "restaurant-2-orders-wide.csv":
         metric_columns = [
-            'Order ID', 'Date', 'Time', 'Total products',
+            'Order ID', 'Date', 'Time', 'Hour', 'Minute', 'Second', 'Total products',
             'Total Price', 'Average Item Price', 'Median Item Price',
             'Cheapest Item Price', 'Most Expensive Item Price',
             'Average Item Quantity', 'Max Item Quantity', 'Min Item Quantity'

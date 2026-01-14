@@ -2,6 +2,20 @@ import pandas as pd
 
 # === 1️⃣ Načtení dat ===
 df = pd.read_csv("Datasets/Original/restaurant-2-orders.csv")
+products = pd.read_csv("Datasets/Original/restaurant-2-products-price.csv")
+
+# === 1️⃣.1️⃣ Normalizace názvů produktů podle ceníku ===
+# Vytvoření mapování lowercase -> originální název z ceníku
+product_name_map = {}
+for product_name in products['Item Name']:
+    product_name_lower = product_name.lower()
+    if product_name_lower not in product_name_map:
+        product_name_map[product_name_lower] = product_name
+
+# Normalizace názvů v objednávkách
+df['Item Name'] = df['Item Name'].str.lower().map(product_name_map).fillna(df['Item Name'])
+
+print(f"✅ Normalizováno názvy produktů podle ceníku ({len(product_name_map)} unikátních produktů)")
 
 # === 2️⃣ Parsování datumu ===
 df['Order Date'] = pd.to_datetime(df['Order Date'], format='%d/%m/%Y %H:%M', errors='coerce')
