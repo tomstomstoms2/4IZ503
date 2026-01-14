@@ -45,7 +45,14 @@ orders_meta = (
     })
 )
 
-# === 5️⃣.1️⃣ Rozdělení času na hodiny, minuty, sekundy ===
+# === 5️⃣.1️⃣ Přidání dne v týdnu ===
+# Převod Date na datetime a extrakce dne v týdnu
+orders_meta['Date_dt'] = pd.to_datetime(orders_meta['Date'])
+orders_meta['Day of Week'] = orders_meta['Date_dt'].dt.day_name()  # Anglický název dne
+orders_meta['Day of Week Number'] = orders_meta['Date_dt'].dt.dayofweek  # 0=Monday, 6=Sunday
+orders_meta = orders_meta.drop(columns=['Date_dt'])  # Odstranit pomocný sloupec
+
+# === 5️⃣.2️⃣ Rozdělení času na hodiny, minuty, sekundy ===
 # Převod Time na pandas datetime pro extrakci komponent
 orders_meta['Time_dt'] = pd.to_datetime(orders_meta['Time'], format='%H:%M:%S', errors='coerce')
 orders_meta['Hour'] = orders_meta['Time_dt'].dt.hour
@@ -98,7 +105,8 @@ final[['Average Item Quantity', 'Max Item Quantity', 'Min Item Quantity']] = piv
 
 # === 1️⃣2️⃣ Přeskládání sloupců: metriky vpředu, itemy vzadu ===
 metric_columns = [
-    'Date', 'Time', 'Hour', 'Minute', 'Second', 'Total products',
+    'Date', 'Day of Week', 'Day of Week Number',
+    'Time', 'Hour', 'Minute', 'Second', 'Total products',
     'Total Price', 'Average Item Price', 'Median Item Price',
     'Cheapest Item Price', 'Most Expensive Item Price',
     'Average Item Quantity', 'Max Item Quantity', 'Min Item Quantity'
