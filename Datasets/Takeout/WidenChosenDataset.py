@@ -55,7 +55,17 @@ def price_range_for_order(row):
 
 final[['Cheapest Item Price', 'Most Expensive Item Price']] = pivot.apply(price_range_for_order, axis=1)
 
-# === 🔟 Průměrné, max a min množství ===
+# === 🔟 Medián ceny položky ===
+def median_price_for_order(row):
+    ordered_items = row[row > 0].index
+    if not len(ordered_items):
+        return None
+    prices = [price_map.get(item, 0) for item in ordered_items]
+    return pd.Series(prices).median()
+
+final['Median Item Price'] = pivot.apply(median_price_for_order, axis=1)
+
+# === 1️⃣1️⃣ Průměrné, max a min množství ===
 def quantity_stats(row):
     quantities = row[row > 0].values
     if len(quantities) == 0:
@@ -64,20 +74,20 @@ def quantity_stats(row):
 
 final[['Average Item Quantity', 'Max Item Quantity', 'Min Item Quantity']] = pivot.apply(quantity_stats, axis=1)
 
-# === 11️⃣ Přeskládání sloupců: metriky vpředu, itemy vzadu ===
+# === 1️⃣2️⃣ Přeskládání sloupců: metriky vpředu, itemy vzadu ===
 metric_columns = [
     'Date', 'Time', 'Total products',
-    'Total Price', 'Average Item Price',
+    'Total Price', 'Average Item Price', 'Median Item Price',
     'Cheapest Item Price', 'Most Expensive Item Price',
     'Average Item Quantity', 'Max Item Quantity', 'Min Item Quantity'
 ]
 final = final[metric_columns + list(all_items)]
 
-# === 12️⃣ Uložení ===
+# === 1️⃣3️⃣ Uložení ===
 final.reset_index().to_csv("Datasets/restaurant-2-orders-wide.csv", index=False)
 print("💾 Soubor uložen jako Datasets/restaurant-2-orders-wide.csv")
 
-# === 13️⃣ Shrnutí ===
+# === 1️⃣4️⃣ Shrnutí ===
 print(f"📊 Počet objednávek: {len(final)}")
 print(f"📦 Počet produktových sloupců: {len(all_items)}")
 print("📑 Pořadí sloupců: metriky → itemy")
