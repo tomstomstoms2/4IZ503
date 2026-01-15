@@ -619,5 +619,207 @@ Base: 1,359 | Confidence: 65.3% | AAD: +0.130
 
 ---
 
+## Question 7: Vliv silného deště v kombinaci s časem
+
+### 🎯 Výzkumná otázka
+**Jak se projevuje silný déšť v různou denní dobu a jak se liší chování při dešti oproti suchu?**
+
+Konkrétně: 
+- Komplement Question 6: zaměření na výraznější srážky (medium, strong) namísto absence deště
+- Využití SD4ft-Miner: přímé porovnání pravděpodobností při dešti vs bez deště
+
+### ⚙️ Konfigurace
+
+**Soubor:** `Question7.py`
+
+**Dvě analýzy:**
+
+#### Analýza A: 4ft-Miner (základní asociační pravidla)
+
+**Antecedent (příčina):**
+- `Hour` (hodina objednávky, 1-3 prvky)
+- `precipitation_cat_seq` (srážky, 1-2 prvky, typ: rcut)
+- Celkově: min 2, max 6 prvků
+
+**Sukcedent (důsledek):**
+- `Total_Products_cat_seq` (velikost objednávky, 1-2 prvky)
+- `Total_Price_cat_seq` (cena objednávky, 1-2 prvky)
+- Celkově: min 1, max 2 prvky
+
+**Kvantifikátory:**
+- Confidence: ≥ 0.3
+- Base: ≥ 100
+- AAD: ≥ 0.2
+
+#### Analýza B: SD4ft-Miner (porovnání podmínek)
+
+**Antecedent:** `Hour` (1-3 prvky)
+
+**Sukcedent:** 
+- `Total_Products_cat_seq` (1-2 prvky)
+- `Total_Price_cat_seq` (1-2 prvky)
+
+**First set (podmínka 1):** `precipitation_cat_seq` (rcut, 1-2 prvky) = medium/strong rain
+
+**Second set (podmínka 2):** `precipitation_cat_seq` (lcut, 1-2 prvky) = no rain/very light rain
+
+**Kvantifikátory:**
+- RatioConf: ≥ 1.1
+- Base1: ≥ 200
+- Base2: ≥ 2,000
+
+### 📊 Výsledky
+
+#### Analýza A: 4ft-Miner (základní asociační pravidla)
+
+**Celkově nalezeno:** 4 pravidla (z 125 ověření)
+
+##### 🌧️ Večerní silný déšť:
+
+**1. Odpolední/večerní hodiny + silný déšť → střední ceny**
+```
+Hour(17-18) & precipitation(strong, medium) => Total_Price_cat(medium, medium-high)
+Base: 165 | Confidence: 41.6% | AAD: +0.203
+```
+**Interpretace:** V odpoledních hodinách při silném nebo středním dešti 41.6% objednávek spadá do střední až vyšší cenové kategorie (£32-50).
+
+**2. 18h + silný déšť → velké objednávky**
+```
+Hour(18) & precipitation(strong, medium) => Total_Products_cat(large, very large)
+Base: 104 | Confidence: 43.9% | AAD: +0.320
+```
+**Interpretace:** V 18 hodin při výrazných srážkách 43.9% objednávek obsahuje velké množství položek. AAD +0.320 představuje silný efekt (32% nárůst pravděpodobnosti).
+
+**3. 18h + silný déšť → střední ceny**
+```
+Hour(18) & precipitation(strong, medium) => Total_Price_cat(medium, medium-high)
+Base: 100 | Confidence: 42.2% | AAD: +0.221
+```
+
+**4. Večer 18-19h + silný déšť → velké objednávky**
+```
+Hour(18-19) & precipitation(strong, medium) => Total_Products_cat(large, very large)
+Base: 175 | Confidence: 40.0% | AAD: +0.205
+```
+
+#### Analýza B: SD4ft-Miner (porovnání chování při různých srážkách)
+
+**Celkově nalezeno:** 10 pravidel (z 652 ověření)
+
+**Procedura:** SD4ft-Miner hledá změny v pravděpodobnosti (confidence) mezi dvěma podmínkami (frst vs scnd).
+
+**Porovnání:**
+- **First set:** precipitation_cat(strong, medium) - silný nebo střední déšť
+- **Second set:** precipitation_cat(no rain) nebo precipitation_cat(no rain, very light) - bez deště nebo velmi slabý
+
+##### TOP pravidla (podle RatioConf):
+
+**1. Nejvyšší relativní změna confidence:**
+```
+Hour(18-19) => Total_Price_cat(medium-low, medium) | strong/medium rain vs no rain
+Base1: 214 | Base2: 2,431 | RatioConf: 1.168 | DeltaConf: +0.070
+```
+**Interpretace:** V 18-19h je pravděpodobnost středních cen při silném dešti 16.8% vyšší než bez deště.
+
+**2. Odpolední hodiny - změna cen:**
+```
+Hour(17-18-19) => Total_Price_cat(medium-low, medium) | strong/medium rain vs no rain
+Base1: 296 | Base2: 3,324 | RatioConf: 1.152 | DeltaConf: +0.065
+```
+
+**3. Kombinace velikosti a ceny:**
+```
+Hour(17-18-19) => Total_Products_cat(medium, large) & Total_Price_cat(medium-low, medium) | strong/medium rain vs no rain
+Base1: 216 | Base2: 2,520 | RatioConf: 1.108 | DeltaConf: +0.035
+```
+
+##### Klíčové poznatky z SD4ft-Miner:
+
+| Pravidlo | Čas | RatioConf | DeltaConf | Base1 | Base2 |
+|----------|-----|-----------|-----------|-------|-------|
+| 1 | 18-19h | 1.168 | +0.070 | 214 | 2,431 |
+| 2 | 17-18-19h | 1.152 | +0.065 | 296 | 3,324 |
+| 3 | 16-17-18h | 1.145 | +0.063 | 214 | 2,342 |
+
+**Interpretace SD4ft výsledků:**
+- **RatioConf 1.10-1.17:** Při silném dešti je pravděpodobnost středních cen 10-17% vyšší než bez deště
+- **Všechna pravidla:** Odpolední/večerní hodiny (16-20h)
+- **Konzistentní pattern:** Silný déšť zvyšuje pravděpodobnost středních cen oproti absenci deště
+
+### 💡 Závěry
+
+1. **Opačný vzor k Question 6 (potvrzeno oběma analýzami):**
+   - Q6 (absence deště): tiny/small objednávky
+   - Q7 (silný déšť): large/very large objednávky
+   - SD4ft-Miner kvantifikoval rozdíl: 10-17% vyšší pravděpodobnost středních cen při dešti
+
+2. **Časová koncentrace:**
+   - 4ft-Miner: Všechna 4 pravidla se týkají 17-19h
+   - SD4ft-Miner: Všech 10 pravidel se týká 16-20h
+   - Nejsilnější efekt v 18-19h
+
+3. **Efekt silného deště:**
+   - 4ft-Miner: Confidence 40-44%, AAD 0.20-0.32
+   - SD4ft-Miner: RatioConf 1.10-1.17 (10-17% relativní nárůst)
+   - Obě analýzy ukazují silný a konzistentní efekt
+
+4. **SD4ft-Miner přidaná hodnota:**
+   - Umožňuje přímé porovnání chování při dešti vs bez deště
+   - Kvantifikuje relativní změnu pravděpodobnosti (RatioConf)
+   - Base2 (bez deště) 2,000-4,000 poskytuje robustní baseline
+
+5. **Praktické implikace:**
+   - Silný déšť v 18h výrazně zvyšuje pravděpodobnost velkých objednávek
+   - Střední až vyšší cenové kategorie dominují
+   - Relativní nárůst 10-17% oproti běžnému stavu bez deště
+
+### 📈 Klíčové vzory:
+
+#### 4ft-Miner (asociační pravidla):
+
+| Čas | Počasí | Efekt | Confidence | AAD | Base |
+|-----|--------|-------|------------|-----|------|
+| 18h | Medium/Strong | Large/Very large | 43.9% | +0.320 | 104 |
+| 18-19h | Medium/Strong | Large/Very large | 40.0% | +0.205 | 175 |
+| 17-18h | Medium/Strong | Medium/Medium-high price | 41.6% | +0.203 | 165 |
+| 18h | Medium/Strong | Medium/Medium-high price | 42.2% | +0.221 | 100 |
+
+#### SD4ft-Miner (porovnání déšť vs bez deště):
+
+| Čas | Efekt | RatioConf | DeltaConf | Base1 (déšť) | Base2 (bez deště) |
+|-----|-------|-----------|-----------|--------------|-------------------|
+| 18-19h | Medium-low/Medium price | 1.168 | +0.070 | 214 | 2,431 |
+| 17-18-19h | Medium-low/Medium price | 1.152 | +0.065 | 296 | 3,324 |
+| 16-17-18h | Medium-low/Medium price | 1.145 | +0.063 | 214 | 2,342 |
+
+### ⚠️ Limitace
+
+#### 4ft-Miner:
+- Pouze 4 pravidla z 125 ověření
+- Všechna pravidla koncentrována v úzkém časovém okně (17-19h)
+- Nižší Base (100-175)
+
+#### SD4ft-Miner:
+- 10 pravidel z 652 ověření
+- Širší časové pokrytí (16-20h)
+- Vyšší Base2 (2,000-4,000) pro baseline bez deště poskytuje robustní srovnání
+- Absence pravidel pro jiné denní doby
+
+### 🔄 Technické detaily
+
+- **Dataset:** `datasetAnalyzed.csv` (19,311 objednávek)
+- **Dekódování:** Automatické pomocí `DecodeCleverMinerOutput.py`
+- **Procedury:** 
+  - 4ft-Miner: Základní asociační pravidla
+  - SD4ft-Miner: Porovnání pravděpodobností mezi podmínkami
+- **SD4ft-Miner kvantifikátory:**
+  - RatioConf: ≥ 1.1 (minimálně 10% relativní změna)
+  - Base1: ≥ 200 (silný/střední déšť)
+  - Base2: ≥ 2,000 (bez deště/velmi slabý déšť)
+- **Typ atributu:** precipitation_cat_seq použit jako 'rcut' (4ft) a 'rcut'/'lcut' (SD4ft)
+- **Ověření:** 125 (4ft) + 652 (SD4ft) kombinací
+
+---
+
 *Další otázky budou přidány podle potřeby analýzy.*
 
