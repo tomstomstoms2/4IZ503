@@ -16,9 +16,19 @@ Tento dokument popisuje kategorizaci číselných metrik objednávek do diskrét
 ### **datasetAnalyzed.csv** (Optimalizovaný pro CleverMiner)
 - Obsahuje **všechny kategorie** (weather + order metriky)
 - Obsahuje **číselné order metriky** (pro flexibilitu)
+- Obsahuje **číselné sekvence** pro kategorie (`*_cat_seq` sloupce)
 - **Odstraněny** redundantní číselné weather sloupce (sunshine, precipitation, mean_temp, atd.)
 - **Neobsahuje** číselné weather metriky (pouze kategorie)
 - Použití: **Hlavní dataset pro CleverMiner analýzu**
+
+#### Číselné sekvence (_seq sloupce)
+
+Pro každou kategorii existuje číselný ekvivalent s příponou `_seq`:
+- **Důvod**: CleverMiner neumí pracovat se sekvencemi textových kategorií
+- **Výhoda**: Umožňuje použití `'type': 'seq'` v dotazech pro ordinální analýzu
+- **Mapování**: Čísla respektují přirozené pořadí (např. cold=4 < warm=6 < hot=8)
+
+Příklad: `mean_temp_cat_seq` obsahuje čísla 1-8 namísto textů "hard freezing" až "hot"
 
 ### 🔄 Vytvoření analyzed datasetu
 
@@ -29,8 +39,9 @@ python CreateAnalyzedDataset.py
 Skript:
 1. Načte `datasetMerged.csv`
 2. Přidá kategorizované order metriky
-3. Odstraní redundantní číselné weather sloupce
-4. Uloží jako `datasetAnalyzed.csv`
+3. Vytvoří číselné _seq sloupce pro všechny kategorie
+4. Odstraní redundantní číselné weather sloupce
+5. Uloží jako `datasetAnalyzed.csv`
 
 ---
 
@@ -372,19 +383,46 @@ Nejzajímavější kombinace pro analýzu:
 
 ### datasetAnalyzed.csv (výstup CreateAnalyzedDataset.py)
 - **Řádků:** 19,311  
-- **Sloupců:** ~333
+- **Sloupců:** 341
 - **Obsahuje:**
   - Weather kategorie (cloud_cover_cat, sunshine_cat, mean_temp_cat, precipitation_cat, pressure_cat, snow_depth_cat, global_radiation_cat)
+  - Weather číselné sekvence (cloud_cover_cat_seq, sunshine_cat_seq, mean_temp_cat_seq, atd.)
   - Order kategorie (Total_Price_cat, Avg_Item_Price_cat, Total_Products_cat, Avg_Item_Quantity_cat)
+  - Order číselné sekvence (Total_Price_cat_seq, Avg_Item_Price_cat_seq, Total_Products_cat_seq, Avg_Item_Quantity_cat_seq)
   - Číselné order metriky (Total Price, Average Item Price, Median Item Price, Total products, atd.)
   - Produkty (všechny produktové sloupce)
 - **Neobsahuje:** Redundantní číselné weather sloupce (sunshine, mean_temp, precipitation, snow_depth, pressure, global_radiation, cloud_cover, max_temp, min_temp)
 
-**Nové kategorizované sloupce v analyzed datasetu:**
-- `Total_Price_cat` (7 kategorií)
-- `Avg_Item_Price_cat` (5 kategorií)
-- `Total_Products_cat` (6 kategorií)
-- `Avg_Item_Quantity_cat` (5 kategorií)
+**Kategorizované sloupce:**
+- `Total_Price_cat` (7 kategorií) + `Total_Price_cat_seq` (1-7)
+- `Avg_Item_Price_cat` (5 kategorií) + `Avg_Item_Price_cat_seq` (1-5)
+- `Total_Products_cat` (6 kategorií) + `Total_Products_cat_seq` (1-6)
+- `Avg_Item_Quantity_cat` (5 kategorií) + `Avg_Item_Quantity_cat_seq` (1-5)
+
+---
+
+## 🔄 Dekódování CleverMiner výstupu
+
+Při použití `*_cat_seq` sloupců v CleverMiner dotazech se výstup zobrazuje s číselnými kódy. Pro převod zpět na textové kategorie použij:
+
+**Skript:** `DecodeCleverMinerOutput.py`
+
+```python
+from DecodeCleverMinerOutput import decode_cleverminer_output
+
+# CleverMiner výstup s čísly
+output = "mean_temp_cat_seq(6) => Total_Products_cat_seq(2)"
+
+# Dekódování na text
+decoded = decode_cleverminer_output(output)
+print(decoded)
+# Výstup: "mean_temp_cat(warm) => Total_Products_cat(small)"
+```
+
+**Použití ze souboru:**
+```bash
+python DecodeCleverMinerOutput.py cleverminer_output.txt
+```
 
 ---
 
@@ -393,6 +431,7 @@ Nejzajímavější kombinace pro analýzu:
 - [x] Číselné metriky kategorizovány
 - [x] Kategorie vybalancované (>5% podpora)
 - [x] Kategorie interpretovatelné (jasné názvy)
+- [x] Číselné sekvence vytvořeny pro ordinální analýzu
 - [x] Dataset aktualizován
 - [ ] CleverMiner pravidla definována
 - [ ] Analýza spuštěna

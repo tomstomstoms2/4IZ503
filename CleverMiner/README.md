@@ -21,12 +21,17 @@ Tato složka obsahuje skripty a datasety pro analýzu v CleverMiner.
 
 - ✅ **Obsahuje:**
   - Weather kategorie (cloud_cover_cat, sunshine_cat, mean_temp_cat, precipitation_cat, atd.)
+  - Weather číselné sekvence (*_cat_seq pro ordinální analýzu)
   - Order kategorie (Total_Price_cat, Avg_Item_Price_cat, Total_Products_cat, Avg_Item_Quantity_cat)
+  - Order číselné sekvence (*_cat_seq pro ordinální analýzu)
   - Číselné order metriky (Total Price, Average Item Price, Total products, atd.)
   - Produkty (všechny produktové sloupce)
 - ❌ **Neobsahuje:** Redundantní číselné weather sloupce (sunshine, mean_temp, precipitation, pressure, atd.)
-- 📊 **Rozměry:** ~19,311 řádků × ~333 sloupců
+- 📊 **Rozměry:** 19,311 řádků × 341 sloupců
 - 🎯 **Použití:** Hlavní dataset pro CleverMiner analýzu
+
+**💡 Číselné sekvence (_seq):**
+Každá kategorie má číselný ekvivalent (např. `mean_temp_cat_seq`) pro použití s `'type': 'seq'` v CleverMiner dotazech. Umožňuje analýzu ordinálních vztahů (cold < warm < hot).
 
 **Odstraněné sloupce:**
 - `sunshine` → použijte `sunshine_cat`
@@ -58,8 +63,9 @@ python CreateAnalyzedDataset.py
 **Co dělá:**
 1. Načte `datasetMerged.csv`
 2. Přidá kategorizované order metriky
-3. Odstraní redundantní číselné weather sloupce
-4. Uloží jako `datasetAnalyzed.csv`
+3. Vytvoří číselné _seq sloupce pro všechny kategorie (pro ordinální analýzu)
+4. Odstraní redundantní číselné weather sloupce
+5. Uloží jako `datasetAnalyzed.csv`
 
 #### `MergeDatasets.py`
 Spojuje weather a order data do `datasetMerged.csv`.
@@ -146,6 +152,44 @@ Detailní popis kategorizace včetně:
    )
    ```
 
+3. **Pro ordinální analýzu (sekvence):**
+   ```python
+   # Použij *_cat_seq sloupce
+   cleverminer(
+       df=df,
+       proc='4ftMiner',
+       quantifiers={'conf': 0.3, 'Base': 100},
+       ante={
+           'attributes': [
+               {'name': 'mean_temp_cat_seq', 'type': 'seq', 'minlen': 1, 'maxlen': 2}
+           ]
+       },
+       succ={
+           'attributes': [
+               {'name': 'Total_Products_cat_seq', 'type': 'seq', 'minlen': 1, 'maxlen': 1}
+           ]
+       }
+   )
+   
+   # Dekóduj výstup zpět na text
+   from DecodeCleverMinerOutput import decode_cleverminer_output
+   decoded = decode_cleverminer_output(output)
+   print(decoded)
+   ```
+
+### `DecodeCleverMinerOutput.py`
+Převádí číselné kódy z CleverMiner výstupu zpět na textové kategorie.
+
+```bash
+# Ze souboru
+python DecodeCleverMinerOutput.py output.txt
+
+# V kódu
+from DecodeCleverMinerOutput import decode_cleverminer_output
+decoded = decode_cleverminer_output("mean_temp_cat_seq(6) => Total_Products_cat_seq(2)")
+# Výstup: "mean_temp_cat(warm) => Total_Products_cat(small)"
+```
+
 ---
 
 ## ✅ Checklist
@@ -153,6 +197,7 @@ Detailní popis kategorizace včetně:
 - [x] MergeDatasets.py vytvořil datasetMerged.csv
 - [x] CreateAnalyzedDataset.py vytvořil datasetAnalyzed.csv
 - [x] Všechny kategorie mají >5% podporu
+- [x] Číselné sekvence vytvořeny pro ordinální analýzu
 - [ ] CleverMiner pravidla definována
 - [ ] Analýza spuštěna
 - [ ] Výsledky interpretovány
