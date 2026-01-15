@@ -6,15 +6,18 @@ Tento dokument popisuje kategorizaci číselných metrik objednávek do diskrét
 
 ## 📁 Datasety
 
-### **datasetMerged.csv** (Původní spojený dataset)
-- Obsahuje **pouze weather kategorie** (z preprocessingu počasí)
+### **datasetMerged.csv** (Spojený dataset z MergeDatasets.py)
+- Obsahuje **weather kategorie** (z preprocessingu počasí)
+- Obsahuje **číselné weather metriky** (sunshine, mean_temp, precipitation, atd.)
+- Obsahuje **číselné order metriky** (Total Price, Average Item Price, atd.)
 - **Neobsahuje** order metriky kategorie
-- Použití: Základ pro další analýzy a transformace
+- Použití: Základ pro vytvoření analyzed datasetu
 
 ### **datasetAnalyzed.csv** (Optimalizovaný pro CleverMiner)
 - Obsahuje **všechny kategorie** (weather + order metriky)
+- Obsahuje **číselné order metriky** (pro flexibilitu)
 - **Odstraněny** redundantní číselné weather sloupce (sunshine, precipitation, mean_temp, atd.)
-- **Ponechány** číselné order metriky pro flexibilitu
+- **Neobsahuje** číselné weather metriky (pouze kategorie)
 - Použití: **Hlavní dataset pro CleverMiner analýzu**
 
 ### 🔄 Vytvoření analyzed datasetu
@@ -357,17 +360,25 @@ Nejzajímavější kombinace pro analýzu:
 
 ## 🔄 Struktura datasetů
 
-### datasetMerged.csv
+### datasetMerged.csv (výstup MergeDatasets.py)
 - **Řádků:** 19,311
 - **Sloupců:** ~335
-- **Obsahuje:** Weather kategorie, číselné order metriky, produkty
+- **Obsahuje:** 
+  - Weather kategorie (cloud_cover_cat, sunshine_cat, mean_temp_cat, precipitation_cat, pressure_cat, snow_depth_cat, global_radiation_cat)
+  - Číselné weather metriky (cloud_cover, sunshine, mean_temp, precipitation, pressure, snow_depth, global_radiation, max_temp, min_temp)
+  - Číselné order metriky (Total Price, Average Item Price, Median Item Price, Total products, atd.)
+  - Produkty (všechny produktové sloupce)
 - **Neobsahuje:** Order metriky kategorie
 
-### datasetAnalyzed.csv
+### datasetAnalyzed.csv (výstup CreateAnalyzedDataset.py)
 - **Řádků:** 19,311  
 - **Sloupců:** ~333
-- **Obsahuje:** Všechny kategorie, číselné order metriky, produkty
-- **Neobsahuje:** Redundantní číselné weather sloupce (sunshine, mean_temp, precipitation, snow_depth, pressure, global_radiation)
+- **Obsahuje:**
+  - Weather kategorie (cloud_cover_cat, sunshine_cat, mean_temp_cat, precipitation_cat, pressure_cat, snow_depth_cat, global_radiation_cat)
+  - Order kategorie (Total_Price_cat, Avg_Item_Price_cat, Total_Products_cat, Avg_Item_Quantity_cat)
+  - Číselné order metriky (Total Price, Average Item Price, Median Item Price, Total products, atd.)
+  - Produkty (všechny produktové sloupce)
+- **Neobsahuje:** Redundantní číselné weather sloupce (sunshine, mean_temp, precipitation, snow_depth, pressure, global_radiation, cloud_cover, max_temp, min_temp)
 
 **Nové kategorizované sloupce v analyzed datasetu:**
 - `Total_Price_cat` (7 kategorií)

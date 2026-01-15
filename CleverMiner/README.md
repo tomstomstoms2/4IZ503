@@ -5,20 +5,28 @@ Tato složka obsahuje skripty a datasety pro analýzu v CleverMiner.
 ## 📁 Datasety
 
 ### `datasetMerged.csv`
-**Původní spojený dataset** - výsledek merge weather a order dat.
+**Spojený dataset** - výsledek `MergeDatasets.py` (merge weather a order dat).
 
-- ✅ Obsahuje: Weather kategorie, číselné order metriky, produkty
-- ❌ Neobsahuje: Order metriky kategorie
-- 📊 ~19,311 řádků × ~335 sloupců
-- 🎯 Použití: Základ pro další transformace
+- ✅ **Obsahuje:**
+  - Weather kategorie (cloud_cover_cat, sunshine_cat, mean_temp_cat, precipitation_cat, atd.)
+  - Číselné weather metriky (cloud_cover, sunshine, mean_temp, precipitation, pressure, atd.)
+  - Číselné order metriky (Total Price, Average Item Price, Total products, atd.)
+  - Produkty (všechny produktové sloupce)
+- ❌ **Neobsahuje:** Order metriky kategorie
+- 📊 **Rozměry:** ~19,311 řádků × ~335 sloupců
+- 🎯 **Použití:** Základ pro vytvoření analyzed datasetu
 
 ### `datasetAnalyzed.csv`
 **Optimalizovaný dataset pro CleverMiner** - doporučený pro analýzu!
 
-- ✅ Obsahuje: Všechny kategorie (weather + order), číselné order metriky, produkty
-- ❌ Neobsahuje: Redundantní číselné weather sloupce
-- 📊 ~19,311 řádků × ~333 sloupců
-- 🎯 Použití: **Hlavní dataset pro CleverMiner**
+- ✅ **Obsahuje:**
+  - Weather kategorie (cloud_cover_cat, sunshine_cat, mean_temp_cat, precipitation_cat, atd.)
+  - Order kategorie (Total_Price_cat, Avg_Item_Price_cat, Total_Products_cat, Avg_Item_Quantity_cat)
+  - Číselné order metriky (Total Price, Average Item Price, Total products, atd.)
+  - Produkty (všechny produktové sloupce)
+- ❌ **Neobsahuje:** Redundantní číselné weather sloupce (sunshine, mean_temp, precipitation, pressure, atd.)
+- 📊 **Rozměry:** ~19,311 řádků × ~333 sloupců
+- 🎯 **Použití:** Hlavní dataset pro CleverMiner analýzu
 
 **Odstraněné sloupce:**
 - `sunshine` → použijte `sunshine_cat`
@@ -60,19 +68,11 @@ Spojuje weather a order data do `datasetMerged.csv`.
 python MergeDatasets.py
 ```
 
----
-
-### Pomocné skripty
-
-#### `RestoreMergedDataset.py`
-Obnoví `datasetMerged.csv` do původního stavu (odstraní order kategorie).
-
-```bash
-python RestoreMergedDataset.py
-```
-
-#### `CategorizeOrderMetrics.py` ⚠️ DEPRECATED
-Starý skript - nepoužívejte! Místo něj použijte `CreateAnalyzedDataset.py`.
+**Co dělá:**
+1. Načte `london_weather_categorized.csv` (weather data s kategoriemi)
+2. Načte `restaurant-2-orders-wide.csv` (order data)
+3. Spojí je podle data
+4. Uloží jako `datasetMerged.csv`
 
 ---
 

@@ -136,15 +136,18 @@ print("="*70)
 # Sloupce k odstranění - mají kategorizované ekvivalenty
 columns_to_remove = [
     # Weather sloupce (mají _cat verze)
+    'cloud_cover',
     'sunshine',
     'global_radiation',
+    'max_temp',
     'mean_temp',
+    'min_temp',
     'precipitation',
     'snow_depth',
     'pressure',
     
-    # Order metriky (ponecháme, ale můžeme odstranit později podle potřeby)
-    # 'Total Price',  # PONECHÁME pro numerickou analýzu
+    # Order metriky (ponecháme pro numerickou analýzu)
+    # 'Total Price',  # PONECHÁME
     # 'Average Item Price',  # PONECHÁME
     # 'Total products',  # PONECHÁME
     # 'Average Item Quantity',  # PONECHÁME
