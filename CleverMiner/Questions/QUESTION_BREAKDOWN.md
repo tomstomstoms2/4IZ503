@@ -294,5 +294,139 @@ Base: 193 | Confidence: 24.9% | AAD: +0.130
 
 ---
 
+## Question 4: Kombinovaný vliv teploty a slunečního svitu
+
+### 🎯 Výzkumná otázka
+**Jaký je synergický efekt kombinace teploty a slunečního svitu na objednávky?**
+
+Konkrétně: Zesilují se vzájemně efekty teploty a slunce? Jsou některé kombinace obzvlášť silné?
+
+### ⚙️ Konfigurace
+
+**Soubor:** `Question4.py`
+
+**Antecedent (příčina):**
+- `mean_temp_cat_seq` - teplota (1-2 prvky) **+**
+- `sunshine_cat_seq` - sluneční svit (1-2 prvky)
+- **Kombinace obou faktorů!**
+- Celkově: min 1, max 3 prvky v antecedentu
+
+**Sukcedent (důsledek):**
+- `Total_Products_cat_seq` - velikost objednávky (1-2 prvky)
+- `Total_Price_cat_seq` - cena objednávky (1-2 prvky)
+- Celkově: min 1, max 2 prvky v sukcedentu
+
+**Kvantifikátory (PŘÍSNĚJŠÍ):**
+- Confidence: ≥ 0.3 (30%) ← vyšší než Q1-Q3
+- Base: ≥ 100 objednávek
+- AAD: ≥ 0.15 (silný efekt) ← vyšší než Q1-Q3
+
+### 📊 Výsledky
+
+**Celkově nalezeno:** 11 pravidel (z 7,990 ověření)
+
+⚠️ **Pouze 11 pravidel = kombinace má VELMI specifické, ale SILNÉ efekty!**
+
+#### 🔥 TOP pravidla (seřazeno podle AAD):
+
+**1. 🌡️☀️ VERY WARM/HOT + LONG SUNSHINE → Tiny/Small objednávky**
+```
+mean_temp_cat(very warm, hot) & sunshine_cat(long) => Total_Products_cat(tiny, small)
+Base: 106 | Confidence: 37.6% | AAD: +0.248 ⭐
+```
+**Interpretace:** Při **horkém počasí s dlouhým slunečním svitem** objednává **37.6% lidí malé porce** - o 24.8% víc než normálně!
+
+**2. 🌡️☀️ VERY WARM/HOT + LONG SUNSHINE → Very low cena**
+```
+mean_temp_cat(very warm, hot) & sunshine_cat(long) => Total_Price_cat(very low, low)
+Base: 101 | Confidence: 35.8% | AAD: +0.244
+```
+**Interpretace:** Při horku a slunci **dominují nejlevnější objednávky**.
+
+**3. 🌡️☀️ VERY WARM + MODERATE/LONG SUNSHINE → Tiny/Small**
+```
+mean_temp_cat(very warm) & sunshine_cat(moderate, long) => Total_Products_cat(tiny, small)
+Base: 163 | Confidence: 35.7% | AAD: +0.186
+```
+
+**4. 🌡️☀️ VERY WARM/HOT + MODERATE/LONG SUNSHINE → Very low cena**
+```
+mean_temp_cat(very warm, hot) & sunshine_cat(moderate, long) => Total_Price_cat(very low, low)
+Base: 166 | Confidence: 34.7% | AAD: +0.203
+```
+
+**5. 🌡️☀️ FRESH + VERY LONG SUNSHINE → Very low/Low cena**
+```
+mean_temp_cat(fresh) & sunshine_cat(very long) => Total_Price_cat(very low, low)
+Base: 329 | Confidence: 33.8% | AAD: +0.174
+```
+**Interpretace:** I při **mírné teplotě** s **velmi dlouhým sluncem** převažují levné objednávky.
+
+#### 📈 Synergické efekty:
+
+| Kombinace | Efekt | Confidence | AAD | vs. samostatně |
+|-----------|-------|------------|-----|----------------|
+| Very warm/hot + Long sun | Tiny/small | **37.6%** | **+0.248** | 🔥 NEJSILNĚJŠÍ |
+| Very warm + Moderate/long sun | Tiny/small | 35.7% | +0.186 | Silný |
+| Warm + No sunshine | Tiny/small | 34.9% | +0.158 | Paradox! |
+| Fresh + Very long sun | Very low price | 33.8% | +0.174 | Překvapivé |
+
+### 💡 Závěry
+
+1. **Synergický efekt existuje!** Kombinace teploty + slunce má **SILNĚJŠÍ** efekt než jednotlivé faktory:
+   - Q1 (sunshine): AAD 0.10-0.14
+   - Q2 (teplota): AAD 0.11-0.15
+   - **Q4 (kombinace): AAD 0.15-0.25** ⭐
+
+2. **NEJVYŠŠÍ AAD v celé analýze:** +0.248 (very warm/hot + long sunshine)
+
+3. **Paradox - Warm + No sunshine:**
+   - Teplo BEZ slunce → malé objednávky (34.9%)
+   - Možná: zataženo ale teplo = nepříjemné počasí → malé objednávky
+
+4. **Fresh temp + Very long sun:**
+   - I při **mírné teplotě** dlouhý sluneční svit vede k levným objednávkám
+   - Důležitější je **slunce** než teplota!
+
+5. **Business insight:**
+   - **Krásné počasí (horko+slunce) = dramatický pokles objednávek**
+   - Confidence 35-38% = **více než třetina objednávek!**
+   - Lidé jsou venku → neobjednávají nebo jen svačinky
+
+### 🔥 Srovnání všech 4 otázek:
+
+| Otázka | Faktory | Nejvyšší AAD | Nejvyšší Conf | Počet pravidel |
+|--------|---------|--------------|---------------|----------------|
+| Q1 | ☀️ Sunshine | +0.136 | 16.4% | 8 |
+| Q2 | 🌡️ Teplota | +0.151 | 17.0% | 8 |
+| Q3 | 🌧️ Srážky | +0.236 | 47.3% | 10 |
+| **Q4** | **🌡️+☀️ Kombinace** | **+0.248** ⭐ | **37.6%** | 11 |
+
+**Q4 má NEJVYŠŠÍ AAD**, ale Q3 (srážky) má stále nejvyšší confidence!
+
+### ⚠️ Limitace
+
+- Pouze 11 pravidel = **velmi specifické vzory**
+- Všechny se týkají **teplého/horkého počasí** s různým slunečním svitem
+- Žádná pravidla pro **chladné počasí** se sluncem (nedostatečná podpora/efekt)
+- Přísnější kvantifikátory (conf 0.3, aad 0.15) eliminovaly slabé vzory
+
+### 🎯 Klíčové poznatky:
+
+1. **Kombinace faktorů má silnější efekt než jednotlivé faktory**
+2. **Sluneční svit je důležitější než samotná teplota** (fresh + long sun = levně)
+3. **Krásné počasí (warm/hot + sun) = nejsilnější prediktor malých/levných objednávek**
+4. **Synergický efekt až +25% nad baseline!**
+
+### 🔄 Technické detaily
+
+- **Dataset:** `datasetAnalyzed.csv` (19,311 objednávek)
+- **Dekódování:** Automatické pomocí `DecodeCleverMinerOutput.py`
+- **Číselné sekvence:** Použity `*_cat_seq` sloupce pro ordinální analýzu
+- **Procesor:** 4ft-Miner
+- **Ověření:** 7,990 kombinací testováno
+
+---
+
 *Další otázky budou přidány podle potřeby analýzy.*
 

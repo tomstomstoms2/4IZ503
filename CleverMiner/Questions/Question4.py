@@ -7,14 +7,15 @@ from DecodeCleverMinerOutput import decode_cleverminer_output
 
 df = pd.read_csv('../datasetAnalyzed.csv')
 
-# Hledání souvislosti mezi sekvencemi teplot a velikostí/cenou objednávek
+# Hledání souvislosti mezi kombinací teploty + slunečního svitu a velikostí/cenou objednávek
 clm = cleverminer(
     df=df,
     proc='4ftMiner',
-    quantifiers={'conf': 0.1, 'Base': 100, 'aad': 0.1},
+    quantifiers={'conf': 0.3, 'Base': 100, 'aad': 0.15},
     ante={
         'attributes': [
-            {'name': 'precipitation_cat_seq', 'type': 'seq', 'minlen': 1, 'maxlen': 3}
+            {'name': 'mean_temp_cat_seq', 'type': 'seq', 'minlen': 1, 'maxlen': 2},
+            {'name': 'sunshine_cat_seq', 'type': 'seq', 'minlen': 1, 'maxlen': 2}
         ],
         'type': 'con', 'minlen': 1, 'maxlen': 3
     },
@@ -23,7 +24,7 @@ clm = cleverminer(
             {'name': 'Total_Products_cat_seq', 'type': 'seq', 'minlen': 1, 'maxlen': 2},
             {'name': 'Total_Price_cat_seq', 'type': 'seq', 'minlen': 1, 'maxlen': 2}
         ],
-        'type': 'con', 'minlen': 1, 'maxlen': 3
+        'type': 'con', 'minlen': 1, 'maxlen': 2
     }
 )
 
