@@ -1,0 +1,393 @@
+# 📊 Kategorizace Order Metrik pro CleverMiner
+
+## 🎯 Přehled
+
+Tento dokument popisuje kategorizaci číselných metrik objednávek do diskrétních kategorií vhodných pro analýzu v CleverMiner.
+
+## 📁 Datasety
+
+### **datasetMerged.csv** (Původní spojený dataset)
+- Obsahuje **pouze weather kategorie** (z preprocessingu počasí)
+- **Neobsahuje** order metriky kategorie
+- Použití: Základ pro další analýzy a transformace
+
+### **datasetAnalyzed.csv** (Optimalizovaný pro CleverMiner)
+- Obsahuje **všechny kategorie** (weather + order metriky)
+- **Odstraněny** redundantní číselné weather sloupce (sunshine, precipitation, mean_temp, atd.)
+- **Ponechány** číselné order metriky pro flexibilitu
+- Použití: **Hlavní dataset pro CleverMiner analýzu**
+
+### 🔄 Vytvoření analyzed datasetu
+
+```bash
+python CreateAnalyzedDataset.py
+```
+
+Skript:
+1. Načte `datasetMerged.csv`
+2. Přidá kategorizované order metriky
+3. Odstraní redundantní číselné weather sloupce
+4. Uloží jako `datasetAnalyzed.csv`
+
+---
+
+## 🧠 Metodologie kategorizace
+
+### Rozhodovací proces při stanovení rozsahů
+
+Při určování hranic kategorií byl použit systematický přístup kombinující statistickou analýzu s business logikou:
+
+#### 1️⃣ **Analýza distribuce dat**
+
+Pro každý číselný sloupec byly vypočítány:
+- **Min/Max hodnoty** (celkový rozsah)
+- **Medián** (střední bod distribuce)
+- **Kvartily (Q1, Q3)** (25. a 75. percentil)
+- **Percentily** (5%, 95%) pro identifikaci extrémních hodnot
+
+#### 2️⃣ **Klíčové principy rozhodování**
+
+**A) Statistická vyváženost**
+- Žádná kategorie < 5% dat (dostatečná podpora pro CleverMiner)
+- Nejčastější kategorie 20-35% (vyhnutí se dominanci jedné kategorie)
+- Rovnoměrné pokrytí celého rozsahu hodnot
+
+**B) Business logika**
+- Kategorie musí mít **intuitivní význam** (např. "budget", "economy", "premium")
+- Hranice na "kulatých" hodnotách (£20, £25, £40...) pro snadnou interpretaci
+- Názvy kategorií odpovídají realitě objednávek
+
+**C) Orientace na medián**
+- Medián = "typická" hodnota → kategorie "medium"/"standard"
+- Kategorie kolem mediánu nejpočetnější (20-35%)
+- Symetrické rozložení pod/nad mediánem kde možné
+
+#### 3️⃣ **Konkrétní příklady rozhodování**
+
+**Total_Price_cat (£0.50 - £283.30)**
+
+Statistiky: Medián = £31.75, Q1 = £25.00, Q3 = £40.00
+
+Rozhodnutí:
+- `medium` (£32-40) → kolem mediánu → **20.5%**
+- `medium-low` (£25-32) → Q1 → medián → **22.0%**
+- `medium-high` (£40-50) → Q3 + rezerva → **14.1%**
+- `low` (£20-25) → pod Q1, kulatá hranice → **13.9%**
+- `very low` (<£20) → nejlevnější objednávky → **14.9%**
+- `high` (£50-65) → top 15% → **9.4%**
+- `very high` (≥£65) → top 5%, extrémní hodnoty → **5.2%**
+
+**Avg_Item_Price_cat (£0.50 - £62.65)**
+
+Statistiky: Medián = £5.70, Q1 = £4.50, Q3 = £6.50
+
+Rozhodnutí:
+- `standard` (£5.5-6.5) → kolem mediánu → **25.7%**
+- `economy` (£4.5-5.5) → Q1 → medián → **24.7%**
+- `premium` (£6.5-8.0) → Q3 + 23% → **19.1%**
+- `budget` (<£4.5) → pod Q1 → **19.6%**
+- `luxury` (≥£8.0) → top 11%, dvojnásobek "budget" → **11.0%**
+
+Hranice £4.5, £5.5, £6.5 = půllibrové intervaly (snadná paměť)
+
+**Total_Products_cat (1-29 položek)**
+
+Statistiky: Medián = 6, Q1 = 5, Q3 = 8
+
+Rozhodnutí:
+- `medium` (5-6) → kolem mediánu → **33.0%** (dominantní = typická objednávka)
+- `small` (3-4) → pod mediánem → **24.8%**
+- `large` (7-8) → kolem Q3 → **20.2%**
+- `very large` (9-11) → nad Q3 → **13.0%**
+- `tiny` (1-2) → minimální objednávky → **5.3%**
+- `huge` (≥12) → top 4%, extrémní → **3.7%**
+
+Celá čísla (počet položek je diskrétní), interval 2 kusy = snadná interpretace
+
+#### 4️⃣ **Validace rozhodnutí**
+
+**✅ Interpretovatelnost**
+```
+"very low" < "low" < "medium-low" < "medium" < "medium-high" < "high" < "very high"
+```
+Logické pořadí názvů odpovídá hodnotám
+
+**✅ Vyváženost**
+- Total_Price_cat: 5.2% - 22.0% (rozsah 16.8%)
+- Avg_Item_Price_cat: 11.0% - 25.7% (rozsah 14.7%)
+- Všechny kategorie >5% podpora (kromě okrajových případů)
+
+**✅ Business smysl**
+- "budget" (£<4.5) vs "luxury" (£≥8.0) = téměř 2× rozdíl
+- "tiny" (1-2 produkty) vs "huge" (12+ produktů) = 6× rozdíl
+- Kategorie odrážejí reálné rozdíly v objednávkách
+
+#### 5️⃣ **Trade-offs**
+
+| Přístup | Výhoda | Nevýhoda | Zvoleno? |
+|---------|--------|----------|----------|
+| Více kategorií (7-9) | Jemnější granularita | Některé <5% podpora | ✅ Ano |
+| Méně kategorií (3-5) | Všechny >10% podpora | Ztráta nuancí | ❌ Ne |
+| Rovnoměrné hranice (£10, £20...) | Snadná paměť | Nerespektuje distribuci | ⚖️ Částečně |
+| Kvartilové hranice | Respektuje data | Nekulaté hodnoty | ⚖️ Částečně |
+
+**Finální strategie:** Kombinace kvartilů + kulatých hodnot + min. 5% podpora
+
+---
+
+## 📋 Přidané kategorizované sloupce
+
+### 1️⃣ **Total_Price_cat** (Celková cena objednávky)
+
+**Původní sloupec:** `Total Price` (0.50 - 283.30 £)
+
+**Kategorie:**
+
+| Kategorie | Rozsah (£) | Distribuce | Popis |
+|-----------|------------|------------|-------|
+| **very low** | < 20 | 14.9% | Velmi levné objednávky |
+| **low** | 20 - 25 | 13.9% | Levné objednávky |
+| **medium-low** | 25 - 32 | 22.0% | Podprůměrné |
+| **medium** | 32 - 40 | 20.5% | Střední (kolem mediánu 31.75£) |
+| **medium-high** | 40 - 50 | 14.1% | Nadprůměrné |
+| **high** | 50 - 65 | 9.4% | Drahé objednávky |
+| **very high** | ≥ 65 | 5.2% | Velmi drahé objednávky (top 5%) |
+
+**Použití:**
+- Identifikace závislosti mezi počasím a hodnotou objednávky
+- Analýza, kdy zákazníci utrácejí více/méně
+- Segmentace zákazníků podle hodnoty objednávky
+
+---
+
+### 2️⃣ **Avg_Item_Price_cat** (Průměrná cena položky)
+
+**Původní sloupec:** `Average Item Price` (0.50 - 62.65 £)
+
+**Kategorie:**
+
+| Kategorie | Rozsah (£) | Distribuce | Popis |
+|-----------|------------|------------|-------|
+| **budget** | < 4.5 | 19.6% | Levné položky |
+| **economy** | 4.5 - 5.5 | 24.7% | Ekonomické položky |
+| **standard** | 5.5 - 6.5 | 25.7% | Standardní (kolem mediánu 5.70£) |
+| **premium** | 6.5 - 8.0 | 19.1% | Prémiové položky |
+| **luxury** | ≥ 8.0 | 11.0% | Luxusní položky |
+
+**Použití:**
+- Analýza preferencí produktových kategorií podle počasí
+- Identifikace, kdy zákazníci volí dražší/levnější produkty
+- Segmentace podle cenové úrovně produktů
+
+---
+
+### 3️⃣ **Total_Products_cat** (Počet položek v objednávce)
+
+**Původní sloupec:** `Total products` (1 - 29 položek)
+
+**Kategorie:**
+
+| Kategorie | Rozsah | Distribuce | Popis |
+|-----------|--------|------------|-------|
+| **tiny** | 1-2 | 5.3% | Velmi malá objednávka |
+| **small** | 3-4 | 24.8% | Malá objednávka |
+| **medium** | 5-6 | 33.0% | Střední (kolem mediánu 6) |
+| **large** | 7-8 | 20.2% | Velká objednávka |
+| **very large** | 9-11 | 13.0% | Velmi velká objednávka |
+| **huge** | ≥ 12 | 3.7% | Obrovská objednávka |
+
+**Použití:**
+- Analýza, jak počasí ovlivňuje velikost objednávky
+- Identifikace, kdy lidé objednávají pro více osob
+- Segmentace podle typu objednávky (individuální vs. skupinová)
+
+---
+
+### 4️⃣ **Avg_Item_Quantity_cat** (Průměrné množství na položku)
+
+**Původní sloupec:** `Average Item Quantity` (1.0 - 8.0)
+
+**Kategorie:**
+
+| Kategorie | Rozsah | Distribuce | Popis |
+|-----------|--------|------------|-------|
+| **single** | = 1.0 | 44.3% | Přesně 1 kus každé položky |
+| **mostly single** | 1.0 - 1.3 | 25.7% | Většinou 1, někdy 2 kusy |
+| **mixed** | 1.3 - 1.6 | 19.0% | Mix 1 a 2 kusy |
+| **mostly double** | 1.6 - 2.0 | 7.3% | Většinou 2 kusy |
+| **bulk** | ≥ 2.0 | 3.7% | Nákup většího množství |
+
+**Použití:**
+- Identifikace nákupního chování (jednotlivci vs. rodiny)
+- Analýza, kdy lidé kupují větší množství
+- Segmentace podle typu spotřebitele
+
+---
+
+## 🔍 Příklady použití v CleverMiner
+
+### Příklad 1: Vliv počasí na hodnotu objednávky
+
+```python
+clm = cleverminer(
+    df=df,
+    proc='4ftMiner',
+    quantifiers={'conf': 0.5, 'Base': 500},
+    ante={
+        'attributes': [
+            {'name': 'mean_temp_cat', 'type': 'subset', 'minlen': 1, 'maxlen': 2},
+            {'name': 'precipitation_cat', 'type': 'subset', 'minlen': 1, 'maxlen': 1}
+        ],
+        'type': 'con', 'minlen': 1, 'maxlen': 2
+    },
+    succ={
+        'attributes': [
+            {'name': 'Total_Price_cat', 'type': 'subset', 'minlen': 1, 'maxlen': 1}
+        ],
+        'type': 'con', 'minlen': 1, 'maxlen': 1
+    }
+)
+```
+
+**Očekávaná zjištění:**
+- "Když je `cold` AND `light rain` → `high` Total_Price" (lidé objednávají více v chladném počasí)
+- "Když je `hot` → `low` Total_Price" (lidé objednávají méně v horkém počasí)
+
+---
+
+### Příklad 2: Vliv dne v týdnu a počasí na velikost objednávky
+
+```python
+clm = cleverminer(
+    df=df,
+    proc='4ftMiner',
+    quantifiers={'conf': 0.6, 'Base': 300},
+    ante={
+        'attributes': [
+            {'name': 'Day of Week', 'type': 'subset', 'minlen': 1, 'maxlen': 1},
+            {'name': 'mean_temp_cat', 'type': 'subset', 'minlen': 1, 'maxlen': 1}
+        ],
+        'type': 'con', 'minlen': 2, 'maxlen': 2
+    },
+    succ={
+        'attributes': [
+            {'name': 'Total_Products_cat', 'type': 'subset', 'minlen': 1, 'maxlen': 1}
+        ],
+        'type': 'con', 'minlen': 1, 'maxlen': 1
+    }
+)
+```
+
+**Očekávaná zjištění:**
+- "Když je `Friday` AND `cold` → `large` objednávka" (pátek + zima = velké objednávky)
+- "Když je `Monday` → `small` objednávka" (pondělí = menší objednávky)
+
+---
+
+### Příklad 3: Preference cenových kategorií podle počasí
+
+```python
+clm = cleverminer(
+    df=df,
+    proc='4ftMiner',
+    quantifiers={'conf': 0.4, 'Base': 400},
+    ante={
+        'attributes': [
+            {'name': 'precipitation_cat', 'type': 'subset', 'minlen': 1, 'maxlen': 1},
+            {'name': 'cloud_cover_cat', 'type': 'subset', 'minlen': 1, 'maxlen': 1}
+        ],
+        'type': 'con', 'minlen': 1, 'maxlen': 2
+    },
+    succ={
+        'attributes': [
+            {'name': 'Avg_Item_Price_cat', 'type': 'subset', 'minlen': 1, 'maxlen': 1}
+        ],
+        'type': 'con', 'minlen': 1, 'maxlen': 1
+    }
+)
+```
+
+**Očekávaná zjištění:**
+- "Když je `strong rain` → `luxury` položky" (v dešti si lidé dopřávají)
+- "Když je `clear` → `budget` položky" (v pěkném počasí se šetří)
+
+---
+
+## 📊 Statistiky kategorizace
+
+### Vyváženost distribuce
+
+Všechny kategorie jsou navrženy tak, aby měly **dostatečnou podporu** (minimálně 5% dat) a zároveň byly **interpretovatelné**.
+
+| Sloupec | Min kategorie | Max kategorie | Rozsah |
+|---------|---------------|---------------|---------|
+| Total_Price_cat | 5.2% (very high) | 22.0% (medium-low) | 16.8% |
+| Avg_Item_Price_cat | 11.0% (luxury) | 25.7% (standard) | 14.7% |
+| Total_Products_cat | 3.7% (huge) | 33.0% (medium) | 29.3% |
+| Avg_Item_Quantity_cat | 3.7% (bulk) | 44.3% (single) | 40.6% |
+
+---
+
+## 💡 Doporučení pro analýzu
+
+### 1. **Confidence (conf)**
+- Použijte **0.3 - 0.7** pro explorativní analýzu
+- Použijte **0.7+** pro silné vzory
+
+### 2. **Base (minimální podpora)**
+- Použijte **300-500** pro obecné vzory
+- Použijte **100-300** pro specifické kombinace
+- Použijte **50-100** pro vzácné případy
+
+### 3. **Kombinace atributů**
+Nejzajímavější kombinace pro analýzu:
+
+**Weather → Order Value:**
+- `mean_temp_cat` + `precipitation_cat` → `Total_Price_cat`
+- `cloud_cover_cat` + `sunshine_cat` → `Avg_Item_Price_cat`
+
+**Time → Order Size:**
+- `Day of Week` + `Hour` → `Total_Products_cat`
+- `Day of Week` + `mean_temp_cat` → `Total_Products_cat`
+
+**Complex patterns:**
+- `Day of Week` + `mean_temp_cat` + `precipitation_cat` → `Total_Price_cat`
+
+---
+
+## 🔄 Struktura datasetů
+
+### datasetMerged.csv
+- **Řádků:** 19,311
+- **Sloupců:** ~335
+- **Obsahuje:** Weather kategorie, číselné order metriky, produkty
+- **Neobsahuje:** Order metriky kategorie
+
+### datasetAnalyzed.csv
+- **Řádků:** 19,311  
+- **Sloupců:** ~333
+- **Obsahuje:** Všechny kategorie, číselné order metriky, produkty
+- **Neobsahuje:** Redundantní číselné weather sloupce (sunshine, mean_temp, precipitation, snow_depth, pressure, global_radiation)
+
+**Nové kategorizované sloupce v analyzed datasetu:**
+- `Total_Price_cat` (7 kategorií)
+- `Avg_Item_Price_cat` (5 kategorií)
+- `Total_Products_cat` (6 kategorií)
+- `Avg_Item_Quantity_cat` (5 kategorií)
+
+---
+
+## ✅ Checklist před analýzou
+
+- [x] Číselné metriky kategorizovány
+- [x] Kategorie vybalancované (>5% podpora)
+- [x] Kategorie interpretovatelné (jasné názvy)
+- [x] Dataset aktualizován
+- [ ] CleverMiner pravidla definována
+- [ ] Analýza spuštěna
+- [ ] Výsledky interpretovány
+
+---
+
+*Poslední aktualizace: 15. ledna 2026*
+
