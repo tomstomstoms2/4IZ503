@@ -129,6 +129,17 @@ PRESSURE_DECODE = {
     7: 'extremely high'
 }
 
+# Day of Week (pandas dt.dayofweek: 0=Monday, 6=Sunday)
+DAY_OF_WEEK_DECODE = {
+    0: 'Monday',
+    1: 'Tuesday',
+    2: 'Wednesday',
+    3: 'Thursday',
+    4: 'Friday',
+    5: 'Saturday',
+    6: 'Sunday'
+}
+
 # Spojení všech mapování
 DECODE_MAPS = {
     'Total_Price_cat_seq': TOTAL_PRICE_DECODE,
@@ -141,7 +152,8 @@ DECODE_MAPS = {
     'mean_temp_cat_seq': MEAN_TEMP_DECODE,
     'precipitation_cat_seq': PRECIPITATION_DECODE,
     'snow_depth_cat_seq': SNOW_DEPTH_DECODE,
-    'pressure_cat_seq': PRESSURE_DECODE
+    'pressure_cat_seq': PRESSURE_DECODE,
+    'Day of Week Number': DAY_OF_WEEK_DECODE
 }
 
 # ============================================================================

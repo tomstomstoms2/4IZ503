@@ -77,21 +77,10 @@ Base: 847 | Confidence: 14.5% | AAD: +0.125
 1. **Inverzní korelace:** Sluneční svit ↑ → Velikost a cena objednávek ↓
 2. **Jasný pattern:** Krásné počasí = malé levné objednávky
 3. **Střední svit = výjimka:** Při 4-6h slunce jsou větší a dražší objednávky
-4. **Highest AAD:** Long sunshine → very low price (AAD +0.136)
-5. **Business insight:** 
+4. **Business insight:** 
    - Při krásném počasí lidé **jdí ven** → méně objednávají
    - Pouze **rychlé svačinky** místo velkých obědů/večeří
    - Střední svit (možná polojasno) → normální chování
-
-### 🔥 Srovnání s ostatními faktory
-
-| Faktor | Efekt | AAD range | Confidence |
-|--------|-------|-----------|------------|
-| **Sluneční svit** | Dlouhý svit → malé levné | **0.10-0.14** | 14-16% |
-| **Teplota** (Q2) | Horko → malé levné | 0.11-0.15 | 10-17% |
-| **Srážky** (Q3) | Déšť → větší střední | 0.10-0.24 | 15-47% |
-
-**Srážky mají stále NEJSILNĚJŠÍ efekt!** (nejvyšší AAD a confidence)
 
 ### 🌤️ Zajímavé pozorování
 
@@ -179,11 +168,10 @@ Base: 303 | Confidence: 17.0% | AAD: +0.142
 ### 💡 Závěry
 
 1. **Jasná inverzní korelace:** Teplota ↑ → Velikost objednávek ↓ a Cena ↓
-2. **Strongest pattern:** Horké počasí → velmi nízké ceny (AAD +0.142)
-3. **Business význam:** 
+2. **Business význam:** 
    - V zimě lidé objednávají více a dražší jídlo (možná více kalorií, rodinné objednávky)
    - V létě převažují malé levné svačinky (nižší chuť k jídlu v horku)
-4. **Sekvence fungují:** CleverMiner úspěšně detekoval ordinální vztahy mezi teplotními kategoriemi
+3. **Sekvence fungují:** CleverMiner úspěšně detekoval ordinální vztahy mezi teplotními kategoriemi
 
 ### ⚠️ Limitace
 
@@ -236,14 +224,14 @@ Konkrétně: Mění se chování zákazníků při různých úrovních deště 
 precipitation_cat(medium) => Total_Price_cat(medium-low, medium)
 Base: 367 | Confidence: 47.3% | AAD: +0.113
 ```
-**Interpretace:** Při středním dešti **téměř polovina objednávek** má střední cenu (£25-40). To je **nejsilnější pravidlo** v celé analýze!
+**Interpretace:** Při středním dešti **téměř polovina objednávek** má střední cenu (£25-40).
 
 **2. Střední až silný déšť → větší objednávky se střední cenou**
 ```
 precipitation_cat(medium, strong) => Total_Products_cat(large, very large) & Total_Price_cat(medium-low, medium)
 Base: 126 | Confidence: 15.5% | AAD: +0.236
 ```
-**Interpretace:** Při středním NEBO silném dešti lidé objednávají **výrazně větší množství** jídla za střední ceny. **Highest AAD (+0.236)** = nejsilnější vzor!
+**Interpretace:** Při středním NEBO silném dešti lidé objednávají **výrazně větší množství** jídla za střední ceny.
 
 **3. Déšť zvyšuje cenu kolem £25-32**
 ```
@@ -269,15 +257,6 @@ Base: 193 | Confidence: 24.9% | AAD: +0.130
    - Lidé se při dešti "zásobují" (větší objednávky)
    - Ochota utratit více (rozvoz v dešti má hodnotu)
    - Možná rodinné objednávky místo chození ven
-
-### 🔥 Srovnání s Question 2 (teplota)
-
-| Faktor | Silnější efekt | AAD range |
-|--------|----------------|-----------|
-| **Teplota** | Horko → malé levné objednávky | 0.11-0.15 |
-| **Srážky** | Déšť → větší střední objednávky | **0.10-0.24** |
-
-**Srážky mají SILNĚJŠÍ efekt než teplota!** (vyšší AAD)
 
 ### ⚠️ Limitace
 
@@ -364,12 +343,11 @@ Base: 329 | Confidence: 33.8% | AAD: +0.174
 
 #### 📈 Synergické efekty:
 
-| Kombinace | Efekt | Confidence | AAD | vs. samostatně |
-|-----------|-------|------------|-----|----------------|
-| Very warm/hot + Long sun | Tiny/small | **37.6%** | **+0.248** | 🔥 NEJSILNĚJŠÍ |
-| Very warm + Moderate/long sun | Tiny/small | 35.7% | +0.186 | Silný |
-| Warm + No sunshine | Tiny/small | 34.9% | +0.158 | Paradox! |
-| Fresh + Very long sun | Very low price | 33.8% | +0.174 | Překvapivé |
+| Kombinace | Efekt | Confidence | AAD |
+|-----------|-------|------------|-----|
+| Very warm/hot + Long sun | Tiny/small | **37.6%** | **+0.248** 🔥 |
+| Very warm + Moderate/long sun | Tiny/small | 35.7% | +0.186 |
+| Fresh + Very long sun | Very low price | 33.8% | +0.174 |
 
 ### 💡 Závěry
 
@@ -378,31 +356,14 @@ Base: 329 | Confidence: 33.8% | AAD: +0.174
    - Q2 (teplota): AAD 0.11-0.15
    - **Q4 (kombinace): AAD 0.15-0.25** ⭐
 
-2. **NEJVYŠŠÍ AAD v celé analýze:** +0.248 (very warm/hot + long sunshine)
-
-3. **Paradox - Warm + No sunshine:**
-   - Teplo BEZ slunce → malé objednávky (34.9%)
-   - Možná: zataženo ale teplo = nepříjemné počasí → malé objednávky
-
-4. **Fresh temp + Very long sun:**
+2. **Fresh temp + Very long sun:**
    - I při **mírné teplotě** dlouhý sluneční svit vede k levným objednávkám
    - Důležitější je **slunce** než teplota!
 
-5. **Business insight:**
+3. **Business insight:**
    - **Krásné počasí (horko+slunce) = dramatický pokles objednávek**
    - Confidence 35-38% = **více než třetina objednávek!**
    - Lidé jsou venku → neobjednávají nebo jen svačinky
-
-### 🔥 Srovnání všech 4 otázek:
-
-| Otázka | Faktory | Nejvyšší AAD | Nejvyšší Conf | Počet pravidel |
-|--------|---------|--------------|---------------|----------------|
-| Q1 | ☀️ Sunshine | +0.136 | 16.4% | 8 |
-| Q2 | 🌡️ Teplota | +0.151 | 17.0% | 8 |
-| Q3 | 🌧️ Srážky | +0.236 | 47.3% | 10 |
-| **Q4** | **🌡️+☀️ Kombinace** | **+0.248** ⭐ | **37.6%** | 11 |
-
-**Q4 má NEJVYŠŠÍ AAD**, ale Q3 (srážky) má stále nejvyšší confidence!
 
 ### ⚠️ Limitace
 
@@ -425,6 +386,259 @@ Base: 329 | Confidence: 33.8% | AAD: +0.174
 - **Číselné sekvence:** Použity `*_cat_seq` sloupce pro ordinální analýzu
 - **Procesor:** 4ft-Miner
 - **Ověření:** 7,990 kombinací testováno
+
+---
+
+## Question 5: Vliv dne v týdnu a hodiny na objednávky
+
+### 🎯 Výzkumná otázka
+**Existují specifické časové vzory v objednávkách podle dne v týdnu a hodiny?**
+
+Konkrétně: Objednávají lidé jinak v různé dny týdne a časy?
+
+### ⚙️ Konfigurace
+
+**Soubor:** `Question5.py`
+
+**Dvě samostatné analýzy:**
+
+#### Analýza A: Extrémy (velmi levné a malé objednávky)
+**Kvantifikátory:** conf ≥ 0.5, Base ≥ 100, AAD ≥ 0.5 (VELMI přísné!)
+
+**Antecedent:**
+- `Day of Week Number` (0=Monday, 6=Sunday)
+- `Hour` (hodina objednávky)
+
+**Sukcedent:**
+- `Total_Products_cat_seq` = tiny, small
+- `Total_Price_cat_seq` = very low, low
+
+#### Analýza B: Střední/velké objednávky
+**Kvantifikátory:** conf ≥ 0.5, Base ≥ 1000, AAD ≥ 0.1
+
+**Antecedent:**
+- `Day of Week Number`
+- `Hour` (3 hodiny v sekvenci)
+
+**Sukcedent:**
+- `Total_Products_cat_seq` = medium, large
+
+### 📊 Výsledky
+
+#### 🌙 Analýza A: Večerní extrémy (7 pravidel)
+
+**TOP zjištění - Pondělí a středa večer:**
+
+```
+Day of Week(Monday) & Hour(20-22) => Tiny/Small & Very low/Low price
+Base: 176 | Confidence: 56.1% | AAD: +0.946 ⭐⭐⭐
+```
+
+```
+Day of Week(Wednesday) & Hour(20-21) => Tiny/Small
+Base: 186 | Confidence: 54.5% | AAD: +0.810
+```
+
+**Interpretace:** 
+- **Pondělí a středa večer (20-22h)** → **více než polovina objednávek** je malých a levných
+- **AAD +0.946** = extrémně silný efekt
+- **94.6% nárůst** pravděpodobnosti malých levných objednávek oproti baseline
+
+#### 📅 Analýza B: Sobotní odpoledne/večer (8 pravidel)
+
+**Konzistentní vzor:**
+
+```
+Day of Week(Saturday) & Hour(16-19) => Medium/Large objednávky
+Confidence: 58.8-59.9% | AAD: +0.106-0.126
+```
+
+**Všech 8 pravidel ukazuje stejné:**
+- **Sobota 16:00-21:00** → **téměř 60% objednávek** je středních nebo velkých
+- **Base 1,134-2,799** = velmi silná podpora (až 14% všech objednávek!)
+- Konzistentní napříč různými časovými okny
+
+### 💡 Závěry
+
+1. **Extrémně silný efekt:**
+   - Pondělí 20-22h má AAD +0.946 (94.6% nárůst pravděpodobnosti)
+   - Téměř **95% nárůst** pravděpodobnosti malých/levných objednávek
+
+2. **Dva jasné vzory:**
+   - **Pondělí/Středa večer** → malé levné objednávky (lidé unavení po práci?)
+   - **Sobota odpoledne/večer** → velké objednávky (rodinné večeře?)
+
+3. **Časové okno je klíčové:**
+   - **20-22h** (pozdní večer) = malé/levné
+   - **16-20h** (sobotní večer) = velké/střední
+
+4. **Business insight:**
+   - **Sobota 17-19h** = **peak pro velké objednávky** (confidence 60%, base 2,799)
+   - **Pondělí večer** = **peak pro malé svačinky** (confidence 56%, AAD +0.95)
+   - Jasná segmentace zákazníků podle dne a času
+
+### 📈 Klíčové časové vzory:
+
+| Den | Čas | Efekt | Confidence | AAD |
+|-----|-----|-------|------------|-----|
+| **Monday** | 20-22h | Tiny/Small + Very low price | 56% | **+0.95** 🔥 |
+| **Wednesday** | 20-21h | Tiny/Small + Very low price | 54% | +0.81 |
+| **Saturday** | 17-19h | Medium/Large | **60%** | +0.12 |
+
+### 🎯 Praktické využití:
+
+1. **Optimalizace skladových zásob:**
+   - Sobota večer → připravit více surovin
+   - Pondělí večer → menší porce, nižší ceny
+
+2. **Dynamické ceny:**
+   - Sobota 17-19h → premium pricing (velké objednávky)
+   - Pondělí večer → akce na malé porce
+
+3. **Personál:**
+   - Sobota odpoledne/večer → více kuchařů (velké objednávky)
+
+### ⚠️ Limitace
+
+- Pouze specifické dny/časy nalezeny (ne všechny kombinace)
+- Pondělí/Středa večer = malá absolútní čísla (Base 146-210)
+- Sobota = velká podpora, ale nižší AAD
+
+### 🔄 Technické detaily
+
+- **Dataset:** `datasetAnalyzed.csv` (19,311 objednávek)
+- **Dekódování:** Automatické pomocí `DecodeCleverMinerOutput.py`
+- **Dvě analýzy:** Extrémy (conf 0.5, aad 0.5) + Střední (conf 0.5, base 1000)
+- **Procesor:** 4ft-Miner (2× spuštěno)
+
+---
+
+## Question 6: Vliv kombinace hodiny a srážek na objednávky
+
+### 🎯 Výzkumná otázka
+**Jaký je synergický efekt času a počasí (srážek) na objednávky?**
+
+Konkrétně: Mění se efekt srážek v různou denní dobu?
+
+### ⚙️ Konfigurace
+
+**Soubor:** `Question6.py`
+
+**Dvě samostatné analýzy:**
+
+#### Analýza A: Extrémy (velmi malé a levné objednávky)
+**Kvantifikátory:** conf ≥ 0.5, Base ≥ 100, AAD ≥ 1.0 (EXTRÉMNĚ přísné!)
+
+**Antecedent:**
+- `Hour` (hodina objednávky, 1-3 prvky)
+- `precipitation_cat_seq` (srážky, 1-2 prvky)
+- Celkově: min 2, max 5 prvků
+
+**Sukcedent:**
+- `Total_Products_cat_seq` = tiny, small
+- `Total_Price_cat_seq` = very low, low
+
+#### Analýza B: Běžné objednávky
+**Kvantifikátory:** conf ≥ 0.5, Base ≥ 1000, AAD ≥ 0.1
+
+**Antecedent:**
+- `Hour` (hodina, 1-3 prvky)
+- `precipitation_cat_seq` (srážky, 1-2 prvky)
+- Celkově: min 2, max 5 prvků
+
+**Sukcedent:**
+- `Total_Products_cat_seq` = small, medium
+- `Total_Price_cat_seq`
+
+### 📊 Výsledky
+
+#### 🌅 Analýza A: Polední extrémy (8 pravidel)
+
+**Jasný vzor - Poledne bez deště:**
+
+```
+Hour(10-12) & precipitation(no rain) => Tiny/Small & Very low/Low price
+Base: 100 | Confidence: 55.2% | AAD: +1.579 🔥
+```
+
+```
+Hour(10-12) & precipitation(no rain, very light) => Tiny/Small
+Base: 130 | Confidence: 62.8% | AAD: +1.085
+```
+
+**Interpretace:**
+- **Dopoledne/poledne (10-12h) BEZ deště** → **více než polovina objednávek** je malých a levných
+- **AAD +1.579** = extrémně silný efekt (158% nárůst pravděpodobnosti!)
+- Vzor platí i s velmi mírným deštěm (very light)
+
+#### 🌙 Analýza B: Večerní objednávky (5 pravidel)
+
+**Konzistentní vzor - Večer bez deště:**
+
+```
+Hour(20-22) & precipitation(no rain, very light) => Small/Medium
+Base: 1,889 | Confidence: 65.4% | AAD: +0.133
+```
+
+```
+Hour(20-21) & precipitation(no rain) => Small/Medium
+Base: 1,359 | Confidence: 65.3% | AAD: +0.130
+```
+
+**Interpretace:**
+- **Večer (20-22h) BEZ deště** → **65% objednávek** je malých nebo středních
+- **Base 1,889** = 10% všech objednávek v datasetu!
+- Velmi konzistentní napříč různými časovými okny
+
+### 💡 Závěry
+
+1. **Extrémní synergický efekt:**
+   - Poledne + bez deště = AAD +1.579 (158% nárůst!)
+   - Kombinace času a počasí má **dramatický** efekt
+
+2. **Dva časové vzory:**
+   - **Poledne (10-12h)** + sucho → tiny/small + very low price (confidence 55-63%)
+   - **Večer (20-22h)** + sucho → small/medium (confidence 65%)
+
+3. **Vliv srážek je kritický:**
+   - Všechna pravidla vyžadují "no rain" nebo "very light"
+   - Při dešti se chování **dramaticky mění**
+
+4. **Business insight:**
+   - **Poledne bez deště** = lidé venku → jen malé svačinky
+   - **Večer bez deště** = stále menší objednávky (lidé nejsou doma?)
+   - **Absence deště má větší efekt než přítomnost deště**
+
+### 📈 Klíčové vzory:
+
+| Čas | Počasí | Efekt | Confidence | AAD | Base |
+|-----|--------|-------|------------|-----|------|
+| **10-12h** | No rain | Tiny/Small + Very low | 55% | **+1.58** 🔥 | 100 |
+| **10-12h** | No/Very light | Tiny/Small | 63% | +1.09 | 130 |
+| **20-22h** | No/Very light | Small/Medium | **65%** | +0.13 | 1,889 |
+
+### 🎯 Porovnání s Q5 (čas bez počasí):
+
+**Q5:** Monday 20-22h → Tiny/Small (AAD +0.946)  
+**Q6:** 20-22h + No rain → Small/Medium (AAD +0.133)
+
+**Rozdíl:**
+- Q5 se zaměřilo na **specifický den** (pondělí) → silnější efekt
+- Q6 se zaměřuje na **obecný čas + počasí** → širší aplikovatelnost
+
+### ⚠️ Limitace
+
+- Analýza A: Malá podpora (Base 100-130) = specifický vzor
+- Všechna pravidla pouze pro "no rain" nebo "very light" rain
+- Chybí pravidla pro silný déšť (nedostatečná podpora/efekt s conf 0.5)
+
+### 🔄 Technické detaily
+
+- **Dataset:** `datasetAnalyzed.csv` (19,311 objednávek)
+- **Dekódování:** Automatické pomocí `DecodeCleverMinerOutput.py`
+- **Dvě analýzy:** Extrémy (aad 1.0) + Běžné (base 1000)
+- **Procesor:** 4ft-Miner (2× spuštěno)
+- **Ověření:** 7,760 + 677 kombinací
 
 ---
 
