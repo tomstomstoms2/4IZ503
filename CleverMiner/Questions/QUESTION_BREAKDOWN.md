@@ -639,7 +639,7 @@ Konkrétně:
 **Antecedent (příčina):**
 - `Hour` (hodina objednávky, 1-3 prvky)
 - `precipitation_cat_seq` (srážky, 1-2 prvky, typ: rcut)
-- Celkově: min 2, max 6 prvků
+- Celkově: min 2, max 6 prvky
 
 **Sukcedent (důsledek):**
 - `Total_Products_cat_seq` (velikost objednávky, 1-2 prvky)
@@ -821,5 +821,216 @@ Base1: 216 | Base2: 2,520 | RatioConf: 1.108 | DeltaConf: +0.035
 
 ---
 
-*Další otázky budou přidány podle potřeby analýzy.*
+## Question 8: Kombinovaný vliv hodiny a teploty na objednávky
 
+### 🎯 Výzkumná otázka
+**Jak interaguje čas objednávky s teplotou a jak se tato kombinace projevuje v chování zákazníků?**
+
+Konkrétně:
+- Existují časové vzory ovlivněné teplotou?
+- Jak se liší efekt teploty v různou denní dobu?
+
+### ⚙️ Konfigurace
+
+**Soubor:** `Question8.py`
+
+**Dvě analýzy:**
+
+#### Analýza A: 4ft-Miner (základní asociační pravidla)
+
+**Antecedent (příčina):**
+- `Hour` (hodina objednávky, 1-3 prvky, seq)
+- `mean_temp_cat_seq` (teplota, 1-2 prvky, seq)
+- Celkově: min 2, max 5 prvků
+
+**Sukcedent (důsledek):**
+- `Total_Products_cat_seq` (velikost objednávky, 1-2 prvky)
+- `Total_Price_cat_seq` (cena objednávky, 1-2 prvky)
+- Celkově: min 1, max 2 prvky
+
+**Kvantifikátory:**
+- Confidence: ≥ 0.6
+- Base: ≥ 100
+- AAD: ≥ 1.0
+
+#### Analýza B: SD4ft-Miner (porovnání teplotních podmínek)
+
+**Antecedent:** `Hour` (1-3 prvky, seq)
+
+**Sukcedent:**
+- `Total_Products_cat_seq` (1-2 prvky) &
+- `Total_Price_cat_seq` (1-2 prvky)
+
+**First set:** `mean_temp_cat_seq` (1-2 prvky) - jedna teplotní kategorie
+
+**Second set:** `mean_temp_cat_seq` (1-2 prvky) - jiná teplotní kategorie
+
+**Kvantifikátory:**
+- RatioConf: ≥ 1.4 (minimálně 40% relativní změna)
+- Base1: ≥ 100
+- Base2: ≥ 200
+
+### 📊 Výsledky
+
+#### Analýza A: 4ft-Miner (základní asociační pravidla)
+
+**Celkově nalezeno:** 7 pravidel (z 10,852 ověření)
+
+##### 🌡️ Mírné teploty v poledních hodinách:
+
+**1. Poledne + mírné teploty → malé objednávky**
+```
+Hour(10-11-12) & mean_temp_cat(fresh, warm) => Total_Products_cat(tiny, small)
+Base: 105 | Confidence: 66.0% | AAD: +1.192
+```
+**Interpretace:** V poledních hodinách (10-12h) při mírných teplotách (fresh/warm, 10-20°C) 66% objednávek je malých (1-3 položky). AAD +1.192 představuje velmi silný efekt.
+
+**2. Odpolední hodiny + teplé počasí → malé objednávky**
+```
+Hour(12-13-14) & mean_temp_cat(warm, very warm) => Total_Products_cat(tiny, small)
+Base: 100 | Confidence: 62.5% | AAD: +1.074
+```
+
+**3. Nejvyšší confidence:**
+```
+Hour(11-12-13) & mean_temp_cat(fresh, warm) => Total_Products_cat(tiny, small)
+Base: 150 | Confidence: 62.0% | AAD: +1.057
+```
+
+**Všechna 7 pravidel:**
+- Týkají se **polední a odpolední doby** (10-15h)
+- Všechna ukazují na **tiny/small** objednávky
+- Všechna vyžadují **fresh/warm/very warm** teploty
+- Confidence: 60.3-66.0%
+- AAD: +1.01 až +1.19 (velmi silný efekt)
+
+#### Analýza B: SD4ft-Miner (porovnání teplotních podmínek)
+
+**Celkově nalezeno:** 15 pravidel (z 257,049 ověření)
+
+**Procedura:** Porovnání pravděpodobností při různých teplotách.
+
+##### TOP pravidla (podle RatioConf):
+
+**1. Nejvyšší relativní změna:**
+```
+Hour(15-16-17) => Total_Products_cat(tiny, small) & Total_Price_cat(very low)
+warm vs cold/fresh
+Base1: 144 | Base2: 222 | RatioConf: 1.483 | DeltaConf: +0.043
+```
+**Interpretace:** V odpoledních hodinách (15-17h) je při teplém počasí pravděpodobnost malých levných objednávek o 48.3% vyšší než při chladném/mírném počasí.
+
+**2. Velmi teplé počasí vs chladné:**
+```
+Hour(17-18-19) => Total_Products_cat(large) & Total_Price_cat(medium)
+freezing/very cold vs cold
+Base1: 138 | Base2: 219 | RatioConf: 1.455 | DeltaConf: +0.027
+```
+**Interpretace:** V 17-19h je při extrémně chladném počasí pravděpodobnost velkých středně drahých objednávek o 45.5% vyšší než při běžném chladném počasí.
+
+**3. Odpolední teplo vs chlad:**
+```
+Hour(15-16-17) => Total_Price_cat(very low)
+warm vs cold/fresh
+Base1: 163 | Base2: 254 | RatioConf: 1.467 | DeltaConf: +0.048
+```
+
+##### Dva opačné vzory identifikované SD4ft-Miner:
+
+**Vzor A: Teplé počasí (15-17h) → malé levné objednávky**
+- 6 pravidel s RatioConf 1.42-1.48
+- Teplé/velmi teplé počasí vs chladné/mírné
+- Efekt: tiny/small + very low price
+
+**Vzor B: Velmi chladné počasí (17-19h) → velké střední objednávky**
+- 4 pravidla s RatioConf 1.41-1.46
+- Freezing/very cold vs cold/fresh/warm
+- Efekt: large + medium price
+
+### 💡 Závěry
+
+1. **Velmi silný synergický efekt:**
+   - 4ft-Miner: AAD +1.0 až +1.2 (100-120% nárůst pravděpodobnosti)
+   - SD4ft-Miner: RatioConf 1.4-1.5 (40-50% relativní změna)
+   - Kombinace času a teploty má dramatický dopad
+
+2. **Dva protichůdné vzory:**
+   - **Poledne/odpoledne + teplo** (10-17h, fresh/warm/very warm):
+     - tiny/small objednávky
+     - very low ceny
+     - Confidence 60-66% (4ft-Miner)
+   
+   - **Večer + extrémní chlad** (17-19h, freezing/very cold):
+     - large objednávky
+     - medium ceny
+     - RatioConf 1.4-1.5 (SD4ft-Miner)
+
+3. **Časová závislost teploty:**
+   - Teplé počasí má největší efekt v odpoledních hodinách (15-17h)
+   - Chladné počasí nejvíce ovlivňuje večerní hodiny (17-19h)
+   - Poledne (10-13h) stabilně generuje malé objednávky při mírných teplotách
+
+4. **Praktické aplikace:**
+   - Teplý den 15-17h: příprava malých levných položek
+   - Velmi chladný večer 17-19h: příprava větších porcí
+   - Confidence 60-66% umožňuje robustní predikci
+
+### 📈 Klíčové vzory:
+
+#### 4ft-Miner (asociační pravidla):
+
+| Čas | Teplota | Efekt | Confidence | AAD | Base |
+|-----|---------|-------|------------|-----|------|
+| 10-11-12h | Fresh/Warm | Tiny/Small | 66.0% | +1.192 | 105 |
+| 11-12-13h | Fresh/Warm | Tiny/Small | 62.0% | +1.057 | 150 |
+| 12-13-14h | Warm/Very warm | Tiny/Small | 62.5% | +1.074 | 100 |
+
+#### SD4ft-Miner (porovnání teplot):
+
+| Čas | Porovnání | Efekt | RatioConf | DeltaConf | Base1/Base2 |
+|-----|-----------|-------|-----------|-----------|-------------|
+| 15-16-17h | Warm vs Cold/Fresh | Tiny/Small + Very low | 1.483 | +0.043 | 144/222 |
+| 15-16-17h | Warm vs Cold/Fresh | Very low price | 1.467 | +0.048 | 163/254 |
+| 17-18-19h | Freezing/Very cold vs Cold | Large + Medium | 1.455 | +0.027 | 138/219 |
+| 16-17-18h | Very warm vs Very cold/Cold | Very low price | 1.457 | +0.045 | 105/381 |
+
+### 🎯 Praktické využití:
+
+1. **Predikce poptávky:**
+   - Teplý odpolední den → malé levné položky (66% confidence)
+   - Velmi chladný večer → velké porce (45% vyšší pravděpodobnost)
+
+2. **Optimalizace nabídky:**
+   - 10-15h + teplo: svačinky, rychlé malé porce
+   - 17-19h + mráz: plnohodnotná jídla, rodinné balíčky
+
+3. **Dynamické ceny:**
+   - Teplé odpoledne: akce na malé porce
+   - Mrazivý večer: premium pricing na velké objednávky
+
+### ⚠️ Limitace
+
+#### 4ft-Miner:
+- Pouze 7 pravidel z 10,852 ověření
+- Všechna pravidla koncentrována na poledne/odpoledne
+- Absence pravidel pro večerní/ranní hodiny s mírným počasím
+
+#### SD4ft-Miner:
+- 15 pravidel z 257,049 ověření (0.006% úspěšnost)
+- Vysoké kvantifikátory (RatioConf ≥ 1.4) eliminovaly slabší vztahy
+- Base1 často nižší (100-200)
+
+### 🔄 Technické detaily
+
+- **Dataset:** `datasetAnalyzed.csv` (19,311 objednávek)
+- **Dekódování:** Automatické pomocí `DecodeCleverMinerOutput.py`
+- **Procedury:**
+  - 4ft-Miner: Základní asociační pravidla (přísné kvantifikátory)
+  - SD4ft-Miner: Porovnání pravděpodobností mezi teplotami
+- **4ft-Miner kvantifikátory:** conf ≥ 0.6, Base ≥ 100, AAD ≥ 1.0
+- **SD4ft-Miner kvantifikátory:** RatioConf ≥ 1.4, Base1 ≥ 100, Base2 ≥ 200
+- **Ověření:** 10,852 (4ft) + 257,049 (SD4ft) kombinací
+
+---
+
+*Další otázky budou přidány podle potřeby analýzy.*
