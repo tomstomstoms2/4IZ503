@@ -271,6 +271,134 @@ Logické pořadí názvů odpovídá hodnotám
 
 ---
 
+## 📅 Kategorizované denní metriky (datasetDailyCompound.csv)
+
+Následující kategorie se používají pro **agregované denní metriky** v datasetDailyCompound.csv (1,095 dnů). Všechny používají **kvantilovou kategorizaci** pro vyváženou distribuci.
+
+### 5️⃣ **Orders_Count_cat** (Počet objednávek za den)
+
+**Původní sloupec:** `Orders_Count` (1 - 77 objednávek/den)
+
+**Metodologie:** **Kvantilová kategorizace (20% kvantily)**
+
+**Kategorie:**
+
+| Kategorie | Rozsah | Distribuce | Popis |
+|-----------|--------|------------|-------|
+| **very low** | 1-7 | 20.27% (222 dnů) | Velmi nízká aktivita |
+| **low** | 8-12 | 26.39% (289 dnů) | Nízká aktivita |
+| **moderate** | 13-19 | 19.36% (212 dnů) | Střední aktivita |
+| **high** | 20-30 | 16.99% (186 dnů) | Vysoká aktivita |
+| **very high** | 31+ | 16.99% (186 dnů) | Velmi vysoká aktivita |
+
+**Vyváženost:** 0.644 ✅ (velmi low: 222 vs high/very high: 186)
+
+**Statistiky:**
+- Mean: 17.6 objednávek/den
+- Median: 13.0 objednávek/den
+- Kvantily: Q20=8, Q40=13, Q60=20, Q80=31
+
+**Použití:**
+- CF-Miner analýza (Question 9) - hledání podmínek s neobvyklými histogramy
+- Identifikace dnů s extrémně vysokou/nízkou aktivitou
+- Temporální analýza podle dne v týdnu
+- Target variable pro denní predikci
+
+**⚠️ Důležité:** Tato kategorizace byla optimalizována z původních pevných hranic (30, 45, 60, 75) na kvantilovou, čímž se vyváženost zlepšila z 0.001 na 0.644 (640× lepší!).
+
+---
+
+### 6️⃣ **Total_Revenue_cat** (Celkové denní tržby)
+
+**Původní sloupec:** `Total_Revenue` (£18.90 - £2,467.00)
+
+**Metodologie:** **Kvantilová kategorizace (optimalizovaná pro long tail distribuci)**
+
+**Kategorie:**
+
+| Kategorie | Rozsah (£) | Distribuce | Popis |
+|-----------|------------|------------|-------|
+| **very low** | < 420 | ~25% | Velmi nízké denní tržby |
+| **low** | 420-580 | ~20% | Nízké denní tržby |
+| **moderate** | 580-750 | ~20% | Střední denní tržby |
+| **high** | 750-1100 | ~15% | Vysoké denní tržby |
+| **very high** | ≥ 1100 | ~20% | Velmi vysoké denní tržby |
+
+**Vyváženost:** ~0.50 ⚡ (přijatelné pro long tail data)
+
+**Statistiky:**
+- Mean: £614.96/den
+- Median: £500/den
+- Data mají pozitivně šikmou ("long tail") distribuci
+
+**Použití:**
+- Analýza celkové denní výkonnosti restaurace
+- Identifikace výjimečně úspěšných/neúspěšných dnů
+- Korelace s počasím a dnem v týdnu
+- Business intelligence metriky
+
+**📊 Poznámka k vyváženosti:** Total_Revenue má přirozeně "long tail" distribuci (mnoho dnů s nízkými tržbami, několik dnů s extrémními tržbami), proto není vyváženost 1.0. Hranice byly optimalizovány empiricky pro nejlepší kompromis mezi vyvážeností a interpretovatelností.
+
+**Historie optimalizace:**
+- Původní hranice: 1200, 1800, 2400, 3000 → Vyváženost 0.001 ❌
+- Optimalizované hranice: 420, 580, 750, 1100 → Vyváženost ~0.50 ✅ (500× lepší!)
+
+---
+
+### 7️⃣ **Avg_Revenue_Per_Order_cat** (Průměrná tržba na objednávku)
+
+**Původní sloupec:** `Avg_Revenue_Per_Order` (£15.33 - £79.73)
+
+**Metodologie:** **Kvantilová kategorizace (20% kvantily)**
+
+**Kategorie:**
+
+| Kategorie | Rozsah (£) | Distribuce | Popis |
+|-----------|------------|------------|-------|
+| **very low** | < 30 | 19.91% (218 dnů) | Velmi nízká průměrná hodnota |
+| **low** | 30-33 | 19.09% (209 dnů) | Nízká průměrná hodnota |
+| **moderate** | 33-35.5 | 20.64% (226 dnů) | Střední průměrná hodnota |
+| **high** | 35.5-38.5 | 21.00% (230 dnů) | Vysoká průměrná hodnota |
+| **very high** | ≥ 38.5 | 19.36% (212 dnů) | Velmi vysoká průměrná hodnota |
+
+**Vyváženost:** 0.909 ✅ (téměř perfektní!)
+
+**Statistiky:**
+- Mean: £34.49/objednávka
+- Median: £34.41/objednávka
+- Kvantily: Q20=30, Q40=33, Q60=35.5, Q80=38.5
+
+**Použití:**
+- Analýza průměrné hodnoty objednávky v čase
+- Identifikace dnů, kdy zákazníci utrácejí více/méně
+- Quality metric (vyšší průměr = dražší položky nebo větší objednávky)
+- Segmentace dnů podle typu zákazníků
+
+**✅ Výborná vyváženost:** Tato kategorizace je téměř perfektně vyvážená díky normálnější distribuci dat (median ≈ mean).
+
+**Historie optimalizace:**
+- Původní hranice: 30, 35, 40, 45 → Vyváženost 0.123 ❌
+- Kvantilové hranice: 30, 33, 35.5, 38.5 → Vyváženost 0.909 ✅ (7.4× lepší!)
+
+---
+
+### 📊 Shrnutí denních metrik
+
+| Metrika | Vyváženost | Hodnocení | Poznámka |
+|---------|-----------|-----------|----------|
+| **Orders_Count_cat** | 0.644 | ✅ Dobré | Kvantilová kategorizace |
+| **Total_Revenue_cat** | ~0.50 | ⚡ Přijatelné | Long tail data, optimalizovaná |
+| **Avg_Revenue_Per_Order_cat** | 0.909 | ✅ Výborné | Téměř perfektní vyváženost |
+
+**Všechny 3 kategorizace jsou vhodné pro CleverMiner analýzu!**
+
+**Klíčový rozdíl oproti order metrikám:**
+- **Order metriky** (datasetAnalyzed.csv): Granularita = 1 objednávka (19,311 řádků)
+- **Denní metriky** (datasetDailyCompound.csv): Granularita = 1 den (1,095 řádků)
+- Denní metriky umožňují temporální analýzu a CF-Miner
+
+---
+
 ## 🔍 Příklady použití v CleverMiner
 
 ### Příklad 1: Vliv počasí na hodnotu objednávky
@@ -360,17 +488,109 @@ clm = cleverminer(
 
 ---
 
+### Příklad 4: CF-Miner analýza denních objednávek (datasetDailyCompound.csv)
+
+```python
+# Načtení daily compound datasetu
+df = pd.read_csv('datasetDailyCompound.csv')
+
+# CF-Miner: Hledání podmínek s neobvyklými histogramy počtu objednávek
+clm = cleverminer(
+    df=df,
+    target='Orders_Count_cat_seq',
+    proc='CFMiner',
+    quantifiers={'Base': 100, 'S_Up': 2},
+    cond={
+        'attributes': [
+            {'name': 'mean_temp_cat_seq', 'type': 'seq', 'minlen': 1, 'maxlen': 2},
+            {'name': 'precipitation_cat_seq', 'type': 'seq', 'minlen': 1, 'maxlen': 2},
+            {'name': 'sunshine_cat_seq', 'type': 'seq', 'minlen': 1, 'maxlen': 2}
+        ],
+        'type': 'con', 'minlen': 1, 'maxlen': 2
+    }
+)
+```
+
+**Očekávaná zjištění:**
+- Podmínky (počasí), kdy histogram Orders_Count má alespoň 2 vzestupy (S_Up ≥ 2)
+- Například: "Když je `freezing` počasí → histogram má 2 vzestupy" (vyváženější distribuce)
+- Identifikace dnů s vyšší variabilitou počtu objednávek
+
+**Využití denních kategorií:**
+- `Orders_Count_cat_seq` - target pro CF-Miner
+- `Total_Revenue_cat` - analýza denní výkonnosti
+- `Avg_Revenue_Per_Order_cat` - quality metric
+
+---
+
+### Příklad 5: Temporální analýza denních tržeb
+
+```python
+# Načtení daily compound datasetu
+df = pd.read_csv('datasetDailyCompound.csv')
+
+# 4ft-Miner: Vliv dne v týdnu na denní tržby
+clm = cleverminer(
+    df=df,
+    proc='4ftMiner',
+    quantifiers={'conf': 0.5, 'Base': 50},
+    ante={
+        'attributes': [
+            {'name': 'Day of Week Number', 'type': 'subset'},
+            {'name': 'mean_temp_cat', 'type': 'subset'}
+        ],
+        'type': 'con', 'minlen': 1, 'maxlen': 2
+    },
+    succ={
+        'attributes': [
+            {'name': 'Total_Revenue_cat', 'type': 'subset'}
+        ]
+    }
+)
+```
+
+**Očekávaná zjištění:**
+- "Když je `Saturday` → `very high` revenue" (soboty = nejvyšší tržby)
+- "Když je `Monday` → `very low` revenue" (pondělí = nejnižší tržby)
+- Kombinace dne a počasí ovlivňující denní výkonnost
+
+---
+
 ## 📊 Statistiky kategorizace
 
-### Vyváženost distribuce
+### Vyváženost distribuce - Order metriky (datasetAnalyzed.csv)
 
 Všechny kategorie jsou navrženy tak, aby měly **dostatečnou podporu** (minimálně 5% dat) a zároveň byly **interpretovatelné**.
 
-| Sloupec | Min kategorie | Max kategorie | Rozsah |
-|---------|---------------|---------------|---------|
-| Total_Price_cat | 5.2% (very high) | 22.0% (medium-low) | 16.8% |
-| Avg_Item_Price_cat | 11.0% (luxury) | 25.7% (standard) | 14.7% |
-| Total_Products_cat | 3.7% (huge) | 33.0% (medium) | 29.3% |
+| Sloupec | Min kategorie | Max kategorie | Rozsah | Vyváženost |
+|---------|---------------|---------------|---------|------------|
+| Total_Price_cat | 5.2% (very high) | 22.0% (medium-low) | 16.8% | ~0.24 |
+| Avg_Item_Price_cat | 11.0% (luxury) | 25.7% (standard) | 14.7% | ~0.43 |
+| Total_Products_cat | 3.7% (huge) | 33.0% (medium) | 29.3% | ~0.11 |
+| Avg_Item_Quantity_cat | 3.7% (bulk) | 44.3% (single) | 40.6% | ~0.08 |
+
+**Poznámka:** Order metriky mají nižší vyváženost kvůli přirozené distribuci objednávkových dat. Všechny kategorie však mají dostatečnou podporu (>3.7%) pro CleverMiner analýzu.
+
+---
+
+### Vyváženost distribuce - Denní metriky (datasetDailyCompound.csv)
+
+**Kvantilová kategorizace** zajišťuje mnohem lepší vyváženost pro denní analýzy.
+
+| Sloupec | Min kategorie | Max kategorie | Vyváženost | Hodnocení |
+|---------|---------------|---------------|------------|-----------|
+| **Orders_Count_cat** | 16.99% (high/very high) | 26.39% (low) | **0.644** | ✅ Dobré |
+| **Total_Revenue_cat** | ~15% | ~25% | **~0.50** | ⚡ Přijatelné* |
+| **Avg_Revenue_Per_Order_cat** | 19.09% (low) | 21.00% (high) | **0.909** | ✅ Výborné |
+
+**Vyváženost** = Min kategorie / Max kategorie (hodnota blízko 1.0 = dobře vyvážené)
+
+\* *Total_Revenue má "long tail" distribuci, proto vyváženost ~0.50 místo 1.0. To je normální a přijatelné.*
+
+**Srovnání s původní kategorizací:**
+- Orders_Count: Vylepšeno z 0.001 → 0.644 (**640× lepší!**)
+- Total_Revenue: Vylepšeno z 0.001 → ~0.50 (**500× lepší!**)
+- Avg_Revenue_Per_Order: Vylepšeno z 0.123 → 0.909 (**7.4× lepší!**)
 | Avg_Item_Quantity_cat | 3.7% (bulk) | 44.3% (single) | 40.6% |
 
 ---

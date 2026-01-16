@@ -138,16 +138,26 @@ print(f"[OK] Orders_Count kategorie: {daily_data['Orders_Count_cat'].value_count
 print("\n[-] Kategorizace Total_Revenue...")
 
 def categorize_total_revenue(revenue):
-    """Kategorizace celkových denních tržeb"""
+    """Kategorizace celkových denních tržeb - pomocí kvantilů (optimalizováno)
+
+    Kvantilové hranice optimalizované pro vyvážené rozdělení:
+    - very low: 0-25% (£0-420)
+    - low: 25-45% (£420-580)
+    - moderate: 45-65% (£580-750)
+    - high: 65-85% (£750-1100)
+    - very high: 85-100% (£1100+)
+
+    Poznámka: Data mají "long tail" distribuci, proto nejsou kvantily rovnoměrné po 20%.
+    """
     if pd.isna(revenue):
         return 'unknown'
-    elif revenue < 1200:
+    elif revenue < 420:
         return 'very low'
-    elif revenue < 1800:
+    elif revenue < 580:
         return 'low'
-    elif revenue < 2400:
+    elif revenue < 750:
         return 'moderate'
-    elif revenue < 3000:
+    elif revenue < 1100:
         return 'high'
     else:
         return 'very high'
@@ -163,16 +173,24 @@ print(f"[OK] Total_Revenue kategorie: {daily_data['Total_Revenue_cat'].value_cou
 print("\n[-] Kategorizace Avg_Revenue_Per_Order...")
 
 def categorize_avg_revenue(revenue):
-    """Kategorizace průměrných tržeb na objednávku"""
+    """Kategorizace průměrných tržeb na objednávku - pomocí kvantilů (20%)
+
+    Kvantilové hranice pro vyvážené rozdělení:
+    - very low: 0-20% (£0-30)
+    - low: 20-40% (£30-33)
+    - moderate: 40-60% (£33-35.5)
+    - high: 60-80% (£35.5-38.5)
+    - very high: 80-100% (£38.5+)
+    """
     if pd.isna(revenue):
         return 'unknown'
     elif revenue < 30:
         return 'very low'
-    elif revenue < 35:
+    elif revenue < 33:
         return 'low'
-    elif revenue < 40:
+    elif revenue < 35.5:
         return 'moderate'
-    elif revenue < 45:
+    elif revenue < 38.5:
         return 'high'
     else:
         return 'very high'
@@ -245,14 +263,14 @@ print(f"  Minimum za den: {daily_data['Orders_Count'].min()}")
 print(f"  Maximum za den: {daily_data['Orders_Count'].max()}")
 
 print(f"\nTržby:")
-print(f"  Průměrné denní tržby: £{daily_data['Total_Revenue'].mean():.2f}")
-print(f"  Minimální denní tržby: £{daily_data['Total_Revenue'].min():.2f}")
-print(f"  Maximální denní tržby: £{daily_data['Total_Revenue'].max():.2f}")
+print(f"  Průměrné denní tržby: GBP{daily_data['Total_Revenue'].mean():.2f}")
+print(f"  Minimální denní tržby: GBP{daily_data['Total_Revenue'].min():.2f}")
+print(f"  Maximální denní tržby: GBP{daily_data['Total_Revenue'].max():.2f}")
 
 print(f"\nPrůměrná tržba na objednávku:")
-print(f"  Průměr: £{daily_data['Avg_Revenue_Per_Order'].mean():.2f}")
-print(f"  Minimum: £{daily_data['Avg_Revenue_Per_Order'].min():.2f}")
-print(f"  Maximum: £{daily_data['Avg_Revenue_Per_Order'].max():.2f}")
+print(f"  Průměr: GBP{daily_data['Avg_Revenue_Per_Order'].mean():.2f}")
+print(f"  Minimum: GBP{daily_data['Avg_Revenue_Per_Order'].min():.2f}")
+print(f"  Maximum: GBP{daily_data['Avg_Revenue_Per_Order'].max():.2f}")
 
 print("\n" + "="*70)
 print("HOTOVO!")
