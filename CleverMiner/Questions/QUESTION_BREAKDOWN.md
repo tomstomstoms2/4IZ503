@@ -605,9 +605,16 @@ Base: 1,359 | Confidence: 65.3% | AAD: +0.130
 
 ### ⚠️ Limitace
 
-- Analýza A: Malá podpora (Base 100-130) = specifický vzor
-- Všechna pravidla pouze pro "no rain" nebo "very light" rain
-- Chybí pravidla pro silný déšť (nedostatečná podpora/efekt s conf 0.5)
+#### Analýza A:
+- Malá podpora (Base 100-130) = specifický vzor
+- Všechna pravidla koncentrována na poledne
+- Nižší AAD (1.0-1.58) ve srovnání s jinými analýzami
+
+#### Analýza B:
+- 5 pravidel z 677 ověření
+- Širší časové pokrytí (20-22h)
+- Vyšší Base (1,359-1,889) poskytuje robustní srovnání
+- Absence pravidel pro jiné denní doby
 
 ### 🔄 Technické detaily
 
@@ -809,7 +816,7 @@ Base1: 216 | Base2: 2,520 | RatioConf: 1.108 | DeltaConf: +0.035
 
 - **Dataset:** `datasetAnalyzed.csv` (19,311 objednávek)
 - **Dekódování:** Automatické pomocí `DecodeCleverMinerOutput.py`
-- **Procedury:** 
+- **Procedury:**
   - 4ft-Miner: Základní asociační pravidla
   - SD4ft-Miner: Porovnání pravděpodobností mezi podmínkami
 - **SD4ft-Miner kvantifikátory:**
@@ -841,7 +848,7 @@ Konkrétně:
 **Antecedent (příčina):**
 - `Hour` (hodina objednávky, 1-3 prvky, seq)
 - `mean_temp_cat_seq` (teplota, 1-2 prvky, seq)
-- Celkově: min 2, max 5 prvků
+- Celkově: min 2, max 5 prvky
 
 **Sukcedent (důsledek):**
 - `Total_Products_cat_seq` (velikost objednávky, 1-2 prvky)
@@ -1030,6 +1037,133 @@ Base1: 163 | Base2: 254 | RatioConf: 1.467 | DeltaConf: +0.048
 - **4ft-Miner kvantifikátory:** conf ≥ 0.6, Base ≥ 100, AAD ≥ 1.0
 - **SD4ft-Miner kvantifikátory:** RatioConf ≥ 1.4, Base1 ≥ 100, Base2 ≥ 200
 - **Ověření:** 10,852 (4ft) + 257,049 (SD4ft) kombinací
+
+---
+
+## Question 9: CF-Miner - Analýza denních objednávek
+
+### 🎯 Výzkumná otázka
+**Za jakých podmínek (den v týdnu, počasí) má histogram denních objednávek neobvyklý tvar?**
+
+Konkrétně: Hledáme situace, kdy histogram počtu objednávek vykazuje poklesy místo postupného nárůstu.
+
+### ⚙️ Konfigurace
+
+**Soubor:** `Question9.py`
+
+**Dataset:** `datasetDailyCompound.csv` (1,095 dnů)
+
+**Target proměnná:** `Orders_Count_cat_seq`
+- Kategorie: 1=very low, 2=low, 3=moderate, 4=high, 5=very high
+
+**Podmínky (condition cedent):**
+- `Day of Week Number` - den v týdnu (0=Monday, ..., 6=Sunday)
+- `mean_temp_cat_seq` - teplota (1-2 prvky, sekvence)
+- `precipitation_cat_seq` - srážky (1-2 prvky, sekvence)
+- Celkově: min 1, max 2 prvky v podmínce
+
+**Kvantifikátory:**
+- Base ≥ 50 (minimálně 50 dnů)
+- S_Down ≥ 1 (alespoň 1 pokles v histogramu)
+
+### 📊 Výsledky
+
+**Celkově nalezeno:** 122 pravidel (z 122 ověření)
+
+#### 🔍 Klíčová zjištění:
+
+**1. Pondělí - extrémně konzistentní nízká aktivita**
+```
+Day of Week(Monday)
+Base: 154 dnů | Histogram: [150, 4, 0, 0, 0]
+S_Down: 2 | RelMax: 97.4%
+```
+**Interpretace:** 97.4% všech pondělků má velmi nízký počet objednávek (very low). Pouze 4 pondělky za 3 roky měly low počet objednávek. Žádný pondělí neměl moderate/high/very high počet objednávek.
+
+**2. Sobota - nejpestřejší rozdělení**
+```
+Day of Week(Saturday)
+Base: 157 dnů | S_Down: 3 | S_Up: 1
+```
+**Interpretace:** Sobota vykazuje nejvíce poklesů v histogramu (3), což značí nerovnoměrné rozdělení - některé soboty mají vysoký počet objednávek, jiné nízký.
+
+**3. Chladné počasí - více poklesů v histogramu**
+```
+mean_temp_cat(very cold, cold) & precipitation(no rain)
+Base: 261 dnů | S_Down: 4
+```
+**Interpretace:** Při chladném počasí bez deště je histogram počtu objednávek nejméně pravidelný (4 poklesy).
+
+**4. Teplé počasí - více poklesů**
+```
+mean_temp_cat(fresh, warm)
+Base: 574 dnů | S_Down: 4
+```
+**Interpretace:** Při mírném až teplém počasí je také nerovnoměrné rozdělení objednávek.
+
+#### 📈 Trendy podle dne v týdnu:
+
+| Den | Base (dnů) | S_Down | Dominantní kategorie | Poznámka |
+|-----|------------|--------|----------------------|----------|
+| Monday | 154 | 2 | very low (97.4%) | Extrémně konzistentní |
+| Tuesday | 156 | 2 | very low | Vysoká konzistence |
+| Wednesday | 157 | 2 | very low | Vysoká konzistence |
+| Thursday | 157 | 1 | very low | Mírně vyšší variabilita |
+| Friday | 157 | 2 | very low | Vysoká konzistence |
+| Saturday | 157 | 3 | variabilní | Nejpestřejší rozdělení |
+| Sunday | 157 | 2 | very low | Vysoká konzistence |
+
+### 💡 Závěry
+
+1. **Extrémní rozdíl mezi dny:**
+   - Pracovní dny (Po-Pá): Velmi konzistentně nízký počet objednávek
+   - Sobota: Jediný den s vysokou variabilitou (S_Down: 3, S_Up: 1)
+
+2. **Počasí ovlivňuje variabilitu:**
+   - Chladné počasí (very cold, cold): S_Down až 4 - nerovnoměrné rozdělení
+   - Teplé počasí (fresh, warm): S_Down až 4 - také nerovnoměrné
+   - Velmi teplé počasí (very warm, hot): S_Down 2-3 - stabilnější
+
+3. **CF-Miner odhalil strukturu:**
+   - Většina pravidel má S_Down 1-4, což ukazuje, že histogram není standardní (rostoucí)
+   - Běžný histogram by měl postupně růst (více very low dnů → méně very high dnů)
+   - Nalezené poklesy značí anomálie v datech
+
+4. **Praktické implikace:**
+   - Pondělí je extrémně předvídatelné (very low)
+   - Sobota vyžaduje flexibilní plánování (vysoká variabilita)
+   - Počasí má paradoxní vliv - extreme teploty (velmi chladné i velmi teplé) vedou k nerovnoměrnosti
+
+### 🎯 Zajímavá pozorování:
+
+**Pondělí + různé teploty:**
+- Všechny kombinace pondělí s teplotou mají >95% very low dnů
+- Počasí nemá na pondělí téměř žádný vliv
+
+**Sobota + různé teploty:**
+- Sobota vykazuje největší variabilitu bez ohledu na teplotu
+- S_Down 2-3 napříč všemi teplotními kategoriemi
+
+**Srážky:**
+- Bez deště (no rain): S_Down 4 - nejvíce poklesů
+- S deštěm: S_Down 3 - méně poklesů
+- Paradoxně déšť stabilizuje rozdělení (méně anomálií)
+
+### ⚠️ Limitace
+
+- Dataset obsahuje pouze 1,095 dnů (3 roky)
+- Většina dnů (897 z 1,095) má very low počet objednávek
+- Kategorizace může skrývat jemné rozdíly
+- CF-Miner hledá odchylky, ne kauzální vztahy
+
+### 🔄 Technické detaily
+
+- **Dataset:** `datasetDailyCompound.csv` (1,095 dnů)
+- **Procesor:** CF-Miner
+- **Target:** Orders_Count_cat_seq (ordinální, 5 kategorií)
+- **Kvantifikátory:** Base ≥ 50, S_Down ≥ 1
+- **Ověření:** 122 kombinací testováno
+- **Pravidla nalezena:** 122 (100% úspěšnost)
 
 ---
 
