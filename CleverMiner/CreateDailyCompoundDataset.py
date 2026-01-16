@@ -113,16 +113,16 @@ print("="*70)
 print("\n[-] Kategorizace Orders_Count...")
 
 def categorize_orders_count(count):
-    """Kategorizace počtu objednávek za den"""
+    """Kategorizace počtu objednávek za den - pomocí kvantilů"""
     if pd.isna(count):
         return 'unknown'
-    elif count < 30:
+    elif count < 8:
         return 'very low'
-    elif count < 45:
+    elif count < 13:
         return 'low'
-    elif count < 60:
+    elif count < 20:
         return 'moderate'
-    elif count < 75:
+    elif count < 31:
         return 'high'
     else:
         return 'very high'

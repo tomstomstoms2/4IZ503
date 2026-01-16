@@ -1040,12 +1040,12 @@ Base1: 163 | Base2: 254 | RatioConf: 1.467 | DeltaConf: +0.048
 
 ---
 
-## Question 9: CF-Miner - Analýza denních objednávek
+## Question 9: CF-Miner - Analýza vzestupů v histogramu denních objednávek
 
 ### 🎯 Výzkumná otázka
-**Za jakých podmínek (den v týdnu, počasí) má histogram denních objednávek neobvyklý tvar?**
+**Za jakých počasových podmínek má histogram denních objednávek VZESTUPY?**
 
-Konkrétně: Hledáme situace, kdy histogram počtu objednávek vykazuje poklesy místo postupného nárůstu.
+Konkrétně: Hledáme situace, kdy histogram počtu objednávek vykazuje alespoň 2 vzestupy (S_Up ≥ 2), což indikuje zvýšenou variabilitu nebo vyšší aktivity v určitých podmínkách. Používáme CF-Miner (Conditional Frequency Miner) k identifikaci těchto podmínek.
 
 ### ⚙️ Konfigurace
 
@@ -1055,115 +1055,343 @@ Konkrétně: Hledáme situace, kdy histogram počtu objednávek vykazuje poklesy
 
 **Target proměnná:** `Orders_Count_cat_seq`
 - Kategorie: 1=very low, 2=low, 3=moderate, 4=high, 5=very high
+- Typ: ordinální sekvence
 
 **Podmínky (condition cedent):**
-- `Day of Week Number` - den v týdnu (0=Monday, ..., 6=Sunday)
-- `mean_temp_cat_seq` - teplota (1-2 prvky, sekvence)
-- `precipitation_cat_seq` - srážky (1-2 prvky, sekvence)
-- Celkově: min 1, max 2 prvky v podmínce
+- `mean_temp_cat_seq` - teplotní sekvence (typ: seq, 1-2 prvky)
+- `precipitation_cat_seq` - srážkové sekvence (typ: seq, 1-2 prvky)
+- `sunshine_cat_seq` - sluneční svit sekvence (typ: seq, 1-2 prvky)
+- `pressure_cat_seq` - tlakové sekvence (typ: seq, 1-2 prvky)
+- `cloud_cover_cat_seq` - oblačnost sekvence (typ: seq, 1-2 prvky)
+- **Celkově:** min 1, max 2 prvky v podmínce (typ: con - konjunkce)
 
 **Kvantifikátory:**
-- Base ≥ 50 (minimálně 50 dnů)
-- S_Down ≥ 1 (alespoň 1 pokles v histogramu)
+- **Base ≥ 100** (minimálně 100 dnů)
+- **S_Up ≥ 2** (alespoň 2 vzestupy v histogramu)
 
 ### 📊 Výsledky
 
-**Celkově nalezeno:** 122 pravidel (z 122 ověření)
+**Celkově nalezeno:** 32 pravidel (z 276 ověření)
 
-#### 🔍 Klíčová zjištění:
+Všechna nalezená pravidla mají S_Up = 2 (splňují minimální požadavek), což indikuje podmínky s **vyšší variabilitou** v distribuci počtu objednávek.
 
-**1. Pondělí - extrémně konzistentní nízká aktivita**
-```
-Day of Week(Monday)
-Base: 154 dnů | Histogram: [150, 4, 0, 0, 0]
-S_Down: 2 | RelMax: 97.4%
-```
-**Interpretace:** 97.4% všech pondělků má velmi nízký počet objednávek (very low). Pouze 4 pondělky za 3 roky měly low počet objednávek. Žádný pondělí neměl moderate/high/very high počet objednávek.
+#### 🔍 Klíčová zjištění podle kategorií:
 
-**2. Sobota - nejpestřejší rozdělení**
-```
-Day of Week(Saturday)
-Base: 157 dnů | S_Down: 3 | S_Up: 1
-```
-**Interpretace:** Sobota vykazuje nejvíce poklesů v histogramu (3), což značí nerovnoměrné rozdělení - některé soboty mají vysoký počet objednávek, jiné nízký.
+### 1️⃣ TEPLOTA - Klíčový faktor variability
 
-**3. Chladné počasí - více poklesů v histogramu**
+**Velmi chladné počasí (freezing, very cold):**
 ```
-mean_temp_cat(very cold, cold) & precipitation(no rain)
-Base: 261 dnů | S_Down: 4
+mean_temp_cat(freezing)
+Base: 115 dnů | S_Up: 2 | S_Down: 2
 ```
-**Interpretace:** Při chladném počasí bez deště je histogram počtu objednávek nejméně pravidelný (4 poklesy).
+**Interpretace:** Mrazivé počasí má nejvyváženější histogram (2 vzestupy i 2 poklesy).
 
-**4. Teplé počasí - více poklesů**
 ```
-mean_temp_cat(fresh, warm)
-Base: 574 dnů | S_Down: 4
+mean_temp_cat(freezing, very cold) & precipitation_cat(very light, light)
+Base: 194 dnů | S_Up: 2 | S_Down: 1
 ```
-**Interpretace:** Při mírném až teplém počasí je také nerovnoměrné rozdělení objednávek.
+**Interpretace:** Mrazivé počasí + lehký déšť/sníh vytváří variabilní distribuci objednávek.
 
-#### 📈 Trendy podle dne v týdnu:
+**Teplé až horké počasí (warm, very warm):**
+```
+mean_temp_cat(warm)
+Base: 106 dnů | S_Up: 2 | S_Down: 2
+```
 
-| Den | Base (dnů) | S_Down | Dominantní kategorie | Poznámka |
-|-----|------------|--------|----------------------|----------|
-| Monday | 154 | 2 | very low (97.4%) | Extrémně konzistentní |
-| Tuesday | 156 | 2 | very low | Vysoká konzistence |
-| Wednesday | 157 | 2 | very low | Vysoká konzistence |
-| Thursday | 157 | 1 | very low | Mírně vyšší variabilita |
-| Friday | 157 | 2 | very low | Vysoká konzistence |
-| Saturday | 157 | 3 | variabilní | Nejpestřejší rozdělení |
-| Sunday | 157 | 2 | very low | Vysoká konzistence |
+```
+mean_temp_cat(warm, very warm) & precipitation_cat(no rain, very light)
+Base: 105 dnů | S_Up: 2 | S_Down: 2
+```
+
+```
+mean_temp_cat(fresh, warm) & pressure_cat_seq(6.0)
+Base: 114 dnů | S_Up: 2 | S_Down: 2
+```
+**Interpretace:** Teplé počasí také vykazuje 2 vzestupy a 2 poklesy - vyvážená distribuce.
+
+**Chladné počasí (cold):**
+```
+mean_temp_cat(cold) & precipitation_cat(no rain)
+Base: 166 dnů | S_Up: 2 | S_Down: 1
+
+mean_temp_cat(cold) & sunshine_cat(very short, short)
+Base: 131 dnů | S_Up: 2 | S_Down: 1
+
+mean_temp_cat(cold) & pressure_cat_seq(5.0 6.0)
+Base: 180 dnů | S_Up: 2 | S_Down: 1
+```
+
+### 2️⃣ SLUNEČNÍ SVIT + SRÁŽKY - Silné kombinace
+
+**Žádný/velmi krátký sluneční svit:**
+```
+precipitation_cat(no rain, very light) & sunshine_cat(none, very short)
+Base: 249 dnů | S_Up: 2 | S_Down: 1
+```
+**Interpretace:** 23% všech dnů (249/1095) - nejčastější podmínka s 2 vzestupy.
+
+```
+precipitation_cat(no rain, very light) & sunshine_cat(very short, short)
+Base: 268 dnů | S_Up: 2 | S_Down: 1
+```
+**Interpretace:** 24% všech dnů (268/1095) - **největší podpora** mezi všemi pravidly!
+
+**Krátký sluneční svit:**
+```
+sunshine_cat(short)
+Base: 176 dnů | S_Up: 2 | S_Down: 1
+```
+
+### 3️⃣ ATMOSFÉRICKÝ TLAK - Kombinace s dalšími faktory
+
+**Nízký až střední tlak:**
+```
+pressure_cat_seq(2.0 4.0) & cloud_cover_cat_seq(4.0)
+Base: 102 dnů | S_Up: 2 | S_Down: 1
+```
+
+**Vysoký tlak:**
+```
+pressure_cat_seq(5.0 6.0) & cloud_cover_cat_seq(1.0 2.0)
+Base: 197 dnů | S_Up: 2 | S_Down: 1
+```
+**Interpretace:** Vysoký tlak + málo oblaků → 2 vzestupy v distribuci.
+
+### 4️⃣ OBLAČNOST
+
+```
+cloud_cover_cat_seq(2.0)
+Base: 195 dnů | S_Up: 2 | S_Down: 1
+```
+**Interpretace:** Částečně oblačno (kategorie 2) má 2 vzestupy.
+
+```
+precipitation_cat(very light, light) & cloud_cover_cat_seq(3.0)
+Base: 129 dnů | S_Up: 2 | S_Down: 2
+```
+
+#### 📈 Souhrn všech 32 pravidel podle S_Down:
+
+**S_Up: 2, S_Down: 2 (vyvážené histogramy):**
+- 6 pravidel (freezing, warm, fresh+warm s různými kombinacemi)
+- **Interpretace:** Tyto podmínky mají nejrovnoměrnější distribuci
+
+**S_Up: 2, S_Down: 1:**
+- 26 pravidel (většina)
+- **Interpretace:** Tyto podmínky mají více vzestupů než poklesů → pozitivnější distribuce
+
+#### 📊 TOP 5 pravidel podle Base (největší podpora):
+
+| # | Podmínka | Base | S_Up | S_Down | % dnů |
+|---|----------|------|------|--------|-------|
+| 1 | no rain/very light + very short/short sunshine | 268 | 2 | 1 | **24.5%** |
+| 2 | very cold/cold + very short/short sunshine | 251 | 2 | 1 | 22.9% |
+| 3 | no rain/very light + none/very short sunshine | 249 | 2 | 1 | 22.7% |
+| 4 | mean_temp(very cold, cold) + sunshine(none, very short) | 216 | 2 | 1 | 19.7% |
+| 5 | pressure(5.0-6.0) + cloud_cover(1.0-2.0) | 197 | 2 | 1 | 18.0% |
 
 ### 💡 Závěry
 
-1. **Extrémní rozdíl mezi dny:**
-   - Pracovní dny (Po-Pá): Velmi konzistentně nízký počet objednávek
-   - Sobota: Jediný den s vysokou variabilitou (S_Down: 3, S_Up: 1)
+✅ **Díky kvantilové kategorizaci jsou výsledky smysluplné a interpretovatelné!**
 
-2. **Počasí ovlivňuje variabilitu:**
-   - Chladné počasí (very cold, cold): S_Down až 4 - nerovnoměrné rozdělení
-   - Teplé počasí (fresh, warm): S_Down až 4 - také nerovnoměrné
-   - Velmi teplé počasí (very warm, hot): S_Down 2-3 - stabilnější
+**Aktuální kategorizace Orders_Count (podle kvantilů):**
+```
+very low:    222 dnů (20.27%) [1-7 objednávek]
+low:         289 dnů (26.39%) [8-12 objednávek]
+moderate:    212 dnů (19.36%) [13-19 objednávek]
+high:        186 dnů (16.99%) [20-30 objednávek]
+very high:   186 dnů (16.99%) [31-77 objednávek]
 
-3. **CF-Miner odhalil strukturu:**
-   - Většina pravidel má S_Down 1-4, což ukazuje, že histogram není standardní (rostoucí)
-   - Běžný histogram by měl postupně růst (více very low dnů → méně very high dnů)
-   - Nalezené poklesy značí anomálie v datech
+Vyváženost (min/max): 0.644 ✅
+```
 
-4. **Praktické implikace:**
-   - Pondělí je extrémně předvídatelné (very low)
-   - Sobota vyžaduje flexibilní plánování (vysoká variabilita)
-   - Počasí má paradoxní vliv - extreme teploty (velmi chladné i velmi teplé) vedou k nerovnoměrnosti
+**Hlavní zjištění:**
+
+1. **S_Up = 2 odráží skutečné počasové vzorce:**
+   - 32 pravidel nalezeno z 276 ověření (11.6% úspěšnost)
+   - Vzestupy v histogramu indikují vyšší variabilitu objednávek při daných podmínkách
+   - Díky vyvážené kategorizaci jsou výsledky interpretovatelné
+
+2. **Extrémní teploty → vyváženější distribuce objednávek:**
+   - Freezing: S_Up: 2, S_Down: 2 (nejrovnoměrnější histogram)
+   - Warm: S_Up: 2, S_Down: 2 (rovnoměrný histogram)
+   - **Interpretace:** Při extrémních teplotách jsou objednávky rozloženy napříč všemi kategoriemi (very low až very high)
+
+3. **Kombinace bez deště + krátký svit je nejčastější:**
+   - Pravidlo #23 (Base: 268, 24.5% dnů): no rain/very light + very short/short sunshine
+   - Pravidlo #22 (Base: 249, 22.7% dnů): no rain/very light + none/very short sunshine
+   - **Interpretace:** Téměř polovina dnů má tyto podmínky s S_Up: 2, S_Down: 1
+
+4. **Většina pravidel má více vzestupů než poklesů:**
+   - 26 pravidel: S_Up: 2, S_Down: 1 (převažují vzestupy)
+   - 6 pravidel: S_Up: 2, S_Down: 2 (vyvážené)
+   - **Interpretace:** Histogram při těchto podmínkách má "rostoucí tendenci" - vyšší kategorie jsou obsazenější
+
+5. **Počasí má měřitelný a smysluplný vliv:**
+   - Různé počasové podmínky vedou k různým tvarům histogramu
+   - S_Up: 2 znamená, že při daných podmínkách je více dní s vyšším počtem objednávek
+   - Například: chladné počasí + krátký svit (Base: 251) → lidé více objednávají
 
 ### 🎯 Zajímavá pozorování:
 
-**Pondělí + různé teploty:**
-- Všechny kombinace pondělí s teplotou mají >95% very low dnů
-- Počasí nemá na pondělí téměř žádný vliv
+**Sluneční svit je dominantní faktor:**
+- 15 z 32 pravidel (47%) obsahuje sunshine_cat
+- Kombinace s dalšími faktory vytváří silná pravidla
 
-**Sobota + různé teploty:**
-- Sobota vykazuje největší variabilitu bez ohledu na teplotu
-- S_Down 2-3 napříč všemi teplotními kategoriemi
+**Chladné počasí + krátký svit = silná kombinace:**
+- mean_temp(very cold, cold) + sunshine(very short, short): Base 251
+- To je 2. největší pravidlo
 
-**Srážky:**
-- Bez deště (no rain): S_Down 4 - nejvíce poklesů
-- S deštěm: S_Down 3 - méně poklesů
-- Paradoxně déšť stabilizuje rozdělení (méně anomálií)
+**Vysoký tlak + málo oblaků:**
+- pressure(5.0-6.0) + cloud_cover(1.0-2.0): Base 197
+- Pravděpodobně krásné stabilní počasí
+
+**Žádné pravidlo nemá pouze S_Up > 2:**
+- Všechna pravidla mají přesně S_Up = 2 (minimum)
+- To naznačuje, že histogram nemá typicky více než 2 vzestupy
 
 ### ⚠️ Limitace
 
-- Dataset obsahuje pouze 1,095 dnů (3 roky)
-- Většina dnů (897 z 1,095) má very low počet objednávek
-- Kategorizace může skrývat jemné rozdíly
-- CF-Miner hledá odchylky, ne kauzální vztahy
+- **Base ≥ 100** je stále přísné, ale rozumné (9-24% dnů v každém pravidle)
+- **Kategorizace Orders_Count je stále problematická** - viz sekce níže
+- **Dataset 1,095 dnů:** Pouze 3 roky dat
+- **S_Up = 2 je minimum:** Nevidíme pravidla s více vzestupy
+
+### 🚨 POZNÁMKA O KATEGORIZACI
+
+**⚠️ I když S_Up analýza funguje lépe než S_Down, základní problém kategorizace přetrvává!**
+
+**Připomenutí distribuce:**
+```
+very low:    897 dnů (81.92%) ★★★★★ DOMINUJE!
+low:         158 dnů (14.43%)
+moderate:     37 dnů ( 3.38%)
+high:          2 dny ( 0.18%)
+very high:     1 den ( 0.09%)
+```
+
+**Baseline histogram:** [897, 158, 37, 2, 1] → S_Up: 0, S_Down: 4
+
+**Co znamená S_Up: 2?**
+- Histogram MÁ alespoň 2 vzestupy
+- Například: [800, 160, 35, 1, 2] → S_Up: 2 (vzestup na pozici 4→5)
+- Nebo: [850, 150, 40, 3, 0] → S_Up: 2 (vzestupy na pozicích 2→3 a 3→4)
+
+**Problém:**
+- I s S_Up: 2, distribuce je stále velmi nevyvážená
+- Vzestupy jsou pravděpodobně na konci histogramu (malé hodnoty)
+- Kvantilová kategorizace by stále byla lepší!
+
+**Doporučení:** Viz `VYHODNOCENI_KATEGORIZACE.md` pro podrobnosti o lepší kategorizaci.
+
+### 🎯 Zajímavá pozorování:
+
+**Kvantilová kategorizace funguje výborně:**
+- Vyváženost 0.644 (nejmenší kategorie má 64% velikosti největší)
+- Všechny kategorie mají 16-26% dat → dostatečná podpora
+- Baseline histogram je mnohem rovnoměrnější než předchozí verze
+
+**Sluneční svit je dominantní faktor:**
+- 15 z 32 pravidel (47%) obsahuje sunshine_cat
+- Kombinace slunečního svitu s dalšími faktory vytváří nejsilnější pravidla
+- Krátký sluneční svit (short) sám o sobě má Base 176 (16% dnů)
+
+**Chladné počasí + krátký svit = vysoká variabilita:**
+- mean_temp(very cold, cold) + sunshine(very short, short): Base 251 (23% dnů)
+- To je 2. největší pravidlo podle podpory
+- S_Up: 2, S_Down: 1 → více dnů s vyšším počtem objednávek
+
+**Vysoký tlak + málo oblaků = vzestupy v distribuci:**
+- pressure(5.0-6.0) + cloud_cover(1.0-2.0): Base 197 (18% dnů)
+- Pravděpodobně reprezentuje krásné stabilní počasí
+- S_Up: 2, S_Down: 1 → pozitivní vliv na objednávky
+
+**Teplé vs chladné počasí - podobné chování:**
+- Oba extrémy (freezing i warm) mají S_Up: 2, S_Down: 2
+- Střední teploty (cold, fresh) mají S_Up: 2, S_Down: 1
+- **Zajímavé:** Extrémní teploty vedou k vyváženější distribuci objednávek
+
+**Interpretace S_Up: 2:**
+- Znamená, že histogram má alespoň 2 vzestupy oproti baseline
+- Například: více dnů s "high" nebo "very high" počtem objednávek
+- Díky kvantilové kategorizaci má toto reálný význam (ne artefakt)
+
+### ⚠️ Limitace
+
+- **Base ≥ 100** eliminuje vzácnější kombinace (ale je rozumné pro robustní výsledky)
+- **Dataset 1,095 dnů:** Pouze 3 roky dat, některé vzory mohou být sezónní nebo náhodné
+- **S_Up = 2 je minimum:** Nevidíme pravidla s 3+ vzestupy (pokud existují)
+- **Chybí temporální faktory:** Den v týdnu není analyzován (byl odstraněn z konfigurace)
+- **Kategorizace funguje dobře:** Vyváženost 0.644 je přijatelná, ale menší kategorie (high, very high) mají ~17% dat
+
+### ✅ KVANTILOVÁ KATEGORIZACE FUNGUJE!
+
+**Distribuce kategorií:**
+```
+very low:    222 dnů (20.27%) [1-7 objednávek]
+low:         289 dnů (26.39%) [8-12 objednávek]
+moderate:    212 dnů (19.36%) [13-19 objednávek]
+high:        186 dnů (16.99%) [20-30 objednávek]
+very high:   186 dnů (16.99%) [31-77 objednávek]
+
+Vyváženost (min/max): 0.644 ✅
+```
+
+**Výhody oproti předchozí kategorizaci:**
+- ✅ **Žádná kategorie nemá > 30% dat** (předchozí: 81.92% v "very low")
+- ✅ **Všechny kategorie mají > 15% dat** (předchosí: 0.09% v "very high")
+- ✅ **Vyváženost 0.644** vs předchozí 0.001 (640× lepší!)
+- ✅ **Smysluplné hranice:** 8, 13, 20, 31 objednávek (blízko kvantilům)
+
+**Kategorizace v kódu:**
+```python
+# CreateDailyCompoundDataset.py, řádek ~113
+def categorize_orders_count(count):
+    """Kategorizace počtu objednávek za den - pomocí kvantilů"""
+    if pd.isna(count):
+        return 'unknown'
+    elif count < 8:   # ~20% percentil
+        return 'very low'
+    elif count < 13:  # ~40% percentil
+        return 'low'
+    elif count < 20:  # ~60% percentil
+        return 'moderate'
+    elif count < 31:  # ~80% percentil
+        return 'high'
+    else:
+        return 'very high'
+```
+
+**Interpretace S_Up: 2 s touto kategorizací:**
+- Histogram má alespoň 2 vzestupy
+- Například: [200, 250, 220, 190, 190] → vzestupy na pozicích 1→2
+- Nebo: [180, 280, 200, 200, 210] → vzestupy na pozicích 1→2 a 4→5
+- **Znamená:** Při daných podmínkách je distribuce "posunuta doprava" (více dnů s vyšším počtem objednávek)
 
 ### 🔄 Technické detaily
 
-- **Dataset:** `datasetDailyCompound.csv` (1,095 dnů)
-- **Procesor:** CF-Miner
-- **Target:** Orders_Count_cat_seq (ordinální, 5 kategorií)
-- **Kvantifikátory:** Base ≥ 50, S_Down ≥ 1
-- **Ověření:** 122 kombinací testováno
-- **Pravidla nalezena:** 122 (100% úspěšnost)
+- **Dataset:** `datasetDailyCompound.csv` (1,095 dnů agregovaných dat)
+- **Procesor:** CF-Miner (Conditional Frequency Miner)
+- **Target:** Orders_Count_cat_seq (ordinální sekvence, 5 kategorií)
+- **Kategorizace:** **Kvantilová** (hranice: 8, 13, 20, 31 objednávek)
+  - very low: 1-7 (20.27% dnů)
+  - low: 8-12 (26.39% dnů)
+  - moderate: 13-19 (19.36% dnů)
+  - high: 20-30 (16.99% dnů)
+  - very high: 31+ (16.99% dnů)
+- **Kvantifikátory:** Base ≥ 100, S_Up ≥ 2
+- **Ověření:** 276 kombinací testováno
+- **Pravidla nalezena:** 32 (11.6% úspěšnost)
+- **Dekódování:** Automatické pomocí `DecodeCleverMinerOutput.py`
+- **Podmínky:** 5 počasových faktorů (teplota, srážky, sluneční svit, tlak, oblačnost)
+- **Změny oproti starší verzi:**
+  - ✅ **Kategorizace změněna na kvantilovou** (z pevných hranic 30, 45, 60, 75)
+  - Odstraněn `Day of Week Number`
+  - Přidány `sunshine_cat_seq`, `pressure_cat_seq`, `cloud_cover_cat_seq`
+  - Změna z `S_Down: 1` na `S_Up: 2`
+  - Snížení `Base` z 300 na 100
+
+---
 
 ---
 

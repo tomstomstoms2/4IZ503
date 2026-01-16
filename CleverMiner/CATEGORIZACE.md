@@ -11,27 +11,48 @@ Tento dokument popisuje kategorizaci číselných metrik objednávek do diskrét
 - Obsahuje **číselné weather metriky** (sunshine, mean_temp, precipitation, atd.)
 - Obsahuje **číselné order metriky** (Total Price, Average Item Price, atd.)
 - **Neobsahuje** order metriky kategorie
-- Použití: Základ pro vytvoření analyzed datasetu
+- **Granularita:** Jeden řádek = jedna objednávka
+- **Použití:** Základ pro vytvoření analyzed a daily compound datasetů
 
-### **datasetAnalyzed.csv** (Optimalizovaný pro CleverMiner)
+### **datasetAnalyzed.csv** (Optimalizovaný pro CleverMiner - objednávky)
 - Obsahuje **všechny kategorie** (weather + order metriky)
 - Obsahuje **číselné order metriky** (pro flexibilitu)
 - Obsahuje **číselné sekvence** pro kategorie (`*_cat_seq` sloupce)
 - **Odstraněny** redundantní číselné weather sloupce (sunshine, precipitation, mean_temp, atd.)
 - **Neobsahuje** číselné weather metriky (pouze kategorie)
-- Použití: **Hlavní dataset pro CleverMiner analýzu**
+- **Granularita:** Jeden řádek = jedna objednávka (19,311 řádků)
+- **Použití:** Analýza vztahů mezi počasím a jednotlivými objednávkami (Questions 1-8)
+
+### **datasetDailyCompound.csv** (Agregovaný pro denní analýzu - CF-Miner)
+- Obsahuje **weather kategorie** + číselné hodnoty (agregované po dnech)
+- Obsahuje **denní metriky objednávek:**
+  - `Orders_Count` - počet objednávek za den
+  - `Total_Revenue` - celkové tržby za den
+  - `Avg_Revenue_Per_Order` - průměrné tržby na objednávku
+- Obsahuje **kategorizované denní metriky:**
+  - `Orders_Count_cat` - kvantilová kategorizace (very low → very high)
+  - `Total_Revenue_cat` a `Avg_Revenue_Per_Order_cat`
+- Obsahuje **číselné sekvence** pro všechny kategorie (`*_cat_seq` sloupce)
+- **Granularita:** Jeden řádek = jeden den (1,095 řádků = 3 roky)
+- **Použití:** 
+  - **CF-Miner analýza** (Question 9) - hledání podmínek s neobvyklými histogramy
+  - Temporální analýza (den v týdnu, sezónní trendy)
+  - Agregované metriky výkonnosti
+
+**⚠️ Důležité:** `Orders_Count_cat` používá **kvantilovou kategorizaci** (hranice 8, 13, 20, 31) pro vyváženou distribuci!
 
 #### Číselné sekvence (_seq sloupce)
 
 Pro každou kategorii existuje číselný ekvivalent s příponou `_seq`:
 - **Důvod**: CleverMiner neumí pracovat se sekvencemi textových kategorií
 - **Výhoda**: Umožňuje použití `'type': 'seq'` v dotazech pro ordinální analýzu
-- **Mapování**: Čísla respektují přirozené pořadí (např. cold=4 < warm=6 < hot=8)
+- **Mapování**: Čísla respektují přirozené pořadí (např. cold=3 < warm=5 < hot=7)
 
-Příklad: `mean_temp_cat_seq` obsahuje čísla 1-8 namísto textů "hard freezing" až "hot"
+Příklad: `mean_temp_cat_seq` obsahuje čísla 1-8 namísto textů "freezing" až "hot"
 
-### 🔄 Vytvoření analyzed datasetu
+### 🔄 Vytvoření datasetů
 
+#### Analyzed dataset (pro analýzu objednávek)
 ```bash
 python CreateAnalyzedDataset.py
 ```
@@ -42,6 +63,18 @@ Skript:
 3. Vytvoří číselné _seq sloupce pro všechny kategorie
 4. Odstraní redundantní číselné weather sloupce
 5. Uloží jako `datasetAnalyzed.csv`
+
+#### Daily Compound dataset (pro denní analýzu)
+```bash
+python CreateDailyCompoundDataset.py
+```
+
+Skript:
+1. Načte `datasetMerged.csv`
+2. Agreguje data po dnech (weather: modus, orders: suma/počet)
+3. Kategorizuje denní metriky podle **kvantilů**
+4. Vytvoří číselné _seq sloupce
+5. Uloží jako `datasetDailyCompound.csv`
 
 ---
 
@@ -374,6 +407,7 @@ Nejzajímavější kombinace pro analýzu:
 ### datasetMerged.csv (výstup MergeDatasets.py)
 - **Řádků:** 19,311
 - **Sloupců:** ~335
+- **Granularita:** 1 řádek = 1 objednávka
 - **Obsahuje:** 
   - Weather kategorie (cloud_cover_cat, sunshine_cat, mean_temp_cat, precipitation_cat, pressure_cat, snow_depth_cat, global_radiation_cat)
   - Číselné weather metriky (cloud_cover, sunshine, mean_temp, precipitation, pressure, snow_depth, global_radiation, max_temp, min_temp)
@@ -384,6 +418,7 @@ Nejzajímavější kombinace pro analýzu:
 ### datasetAnalyzed.csv (výstup CreateAnalyzedDataset.py)
 - **Řádků:** 19,311  
 - **Sloupců:** 341
+- **Granularita:** 1 řádek = 1 objednávka
 - **Obsahuje:**
   - Weather kategorie (cloud_cover_cat, sunshine_cat, mean_temp_cat, precipitation_cat, pressure_cat, snow_depth_cat, global_radiation_cat)
   - Weather číselné sekvence (cloud_cover_cat_seq, sunshine_cat_seq, mean_temp_cat_seq, atd.)
@@ -398,6 +433,35 @@ Nejzajímavější kombinace pro analýzu:
 - `Avg_Item_Price_cat` (5 kategorií) + `Avg_Item_Price_cat_seq` (1-5)
 - `Total_Products_cat` (6 kategorií) + `Total_Products_cat_seq` (1-6)
 - `Avg_Item_Quantity_cat` (5 kategorií) + `Avg_Item_Quantity_cat_seq` (1-5)
+
+### datasetDailyCompound.csv (výstup CreateDailyCompoundDataset.py)
+- **Řádků:** 1,095
+- **Sloupců:** ~40
+- **Granularita:** 1 řádek = 1 den (3 roky dat: 2015-01-01 až 2017-12-31)
+- **Obsahuje:**
+  - Datum a den v týdnu (Date, Day of Week, Day of Week Number)
+  - Weather kategorie (agregované pomocí modus - nejčastější hodnota za den)
+  - Weather číselné sekvence (*_cat_seq)
+  - Weather číselné hodnoty (agregované pomocí průměr)
+  - **Denní metriky objednávek:**
+    - `Orders_Count` - počet objednávek za den (1-77)
+    - `Total_Revenue` - celkové tržby za den
+    - `Avg_Revenue_Per_Order` - průměrné tržby na objednávku
+  - **Kategorizované denní metriky (kvantilová kategorizace):**
+    - `Orders_Count_cat` (5 kategorií: very low, low, moderate, high, very high)
+    - `Total_Revenue_cat` (5 kategorií)
+    - `Avg_Revenue_Per_Order_cat` (5 kategorií)
+  - Číselné sekvence pro denní metriky (*_cat_seq)
+- **Neobsahuje:** Produkty, jednotlivé objednávky
+
+**Kategorizované denní sloupce:**
+- `Orders_Count_cat` (5 kategorií) + `Orders_Count_cat_seq` (1-5)
+  - **Hranice (kvantilové):** very low: 1-7, low: 8-12, moderate: 13-19, high: 20-30, very high: 31+
+  - **Vyváženost:** 0.644 (very low: 20%, low: 26%, moderate: 19%, high: 17%, very high: 17%)
+- `Total_Revenue_cat` (5 kategorií) + `Total_Revenue_cat_seq` (1-5)
+- `Avg_Revenue_Per_Order_cat` (5 kategorií) + `Avg_Revenue_Per_Order_cat_seq` (1-5)
+
+**🎯 Použití:** CF-Miner analýza (Question 9), temporální vzory, agregované metriky
 
 ---
 
